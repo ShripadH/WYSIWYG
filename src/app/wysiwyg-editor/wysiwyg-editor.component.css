@@ -1,0 +1,197 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  height: 100%;
+  width: 100%;
+  box-sizing: border-box;
+}
+.wysiwyg-wrapper {
+  padding: 1em;
+}
+
+.wysiwyg-toolbar {
+  border: 1px solid #ccc;
+  background: #f9f9f9;
+  padding: 4px;
+  margin-bottom: 4px;
+  display: flex;
+  gap: 4px;
+}
+.wysiwyg-toolbar button {
+  background: #fff;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  padding: 2px 8px;
+  cursor: pointer;
+  font-size: 16px;
+}
+.wysiwyg-toolbar button:hover {
+  background: #e6e6e6;
+}
+.wysiwyg-content {
+  min-height: 200px;
+  border: 1px solid #ccc;
+  padding: 8px;
+  background: #fff;
+  border-radius: 3px;
+  outline: none;
+}
+.wysiwyg-footer {
+  text-align: center;
+  color: #888;
+  font-size: 13px;
+  background: #f9f9f9;
+  border: 1px solid #ccc;
+  padding: 8px 0;
+  width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 16px;
+}
+
+.table-grid-popup {
+  position: absolute;
+  top: 44px;
+  left: 8px;
+  z-index: 1000;
+  background: #f4f4f4;
+  border: 1px solid #bbb;
+  border-radius: 4px;
+  padding: 8px 12px 12px 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  min-width: 120px;
+}
+.table-grid-label {
+  font-weight: bold;
+  margin-bottom: 6px;
+  font-size: 15px;
+  color: #444;
+}
+.table-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.table-grid-row {
+  display: flex;
+  gap: 2px;
+}
+.table-grid-cell {
+  width: 20px;
+  height: 20px;
+  border: 1px solid #bbb;
+  background: #fff;
+  cursor: pointer;
+  box-sizing: border-box;
+  transition: background 0.15s, border 0.15s;
+}
+.table-grid-cell.selected,
+.table-grid-cell:hover {
+  background: #e3e8ff;
+  border: 1.5px solid #3b6cff;
+}
+
+.image-toolbar {
+  position: absolute;
+  z-index: 2000;
+  background: #fff;
+  border: 1px solid #bbb;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.10);
+  padding: 4px 8px;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.image-toolbar button {
+  background: #f4f4f4;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  padding: 2px 6px;
+  cursor: pointer;
+  font-size: 16px;
+}
+.image-toolbar button:hover {
+  background: #e3e8ff;
+  border: 1.5px solid #3b6cff;
+}
+
+.image-resize-handles {
+  position: absolute;
+  z-index: 2100;
+  pointer-events: none;
+}
+.image-resize-handles .resize-handle {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  background: #fff;
+  border: 2px solid #3b6cff;
+  border-radius: 50%;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.12);
+  pointer-events: all;
+}
+
+.image-resize-handles .br { bottom: -64px; right: -25px; cursor: nwse-resize; }
+
+.thymeleaf-var {
+  background: #fffbe6;
+  border: 1px dashed #e6b800;
+  color: #b38600;
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-family: monospace;
+  font-size: 95%;
+}
+
+.thymeleaf-dialog-backdrop {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.15);
+  z-index: 3000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.thymeleaf-dialog {
+  background: #fff;
+  border: 1px solid #bbb;
+  border-radius: 6px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.18);
+  padding: 24px 32px 18px 32px;
+  min-width: 320px;
+  text-align: left;
+}
+.thymeleaf-dialog h4 {
+  margin-top: 0;
+}
+.thymeleaf-dialog label {
+  font-weight: 500;
+  margin-bottom: 8px;
+  display: block;
+}
+.thymeleaf-dialog input, .thymeleaf-dialog select {
+  margin-top: 4px;
+  margin-bottom: 12px;
+  width: 100%;
+  padding: 4px 6px;
+  font-size: 15px;
+  border-radius: 3px;
+  border: 1px solid #ccc;
+}
+.thymeleaf-dialog button {
+  margin-right: 10px;
+  padding: 4px 14px;
+  font-size: 15px;
+  border-radius: 3px;
+  border: 1px solid #bbb;
+  background: #f4f4f4;
+  cursor: pointer;
+}
+.thymeleaf-dialog button:hover {
+  background: #e3e8ff;
+  border: 1.5px solid #3b6cff;
+}

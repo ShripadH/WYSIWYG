@@ -1,0 +1,94 @@
+<div class="wysiwyg-wrapper">
+<div class="wysiwyg-toolbar">
+  <button type="button" (click)="format('bold')" title="Bold"><b>B</b></button>
+  <button type="button" (click)="format('italic')" title="Italic"><i>I</i></button>
+  <button type="button" (click)="format('underline')" title="Underline"><u>U</u></button>
+  <button type="button" (click)="format('strikeThrough')" title="Strikethrough"><s>S</s></button>
+  <button type="button" (click)="format('insertOrderedList')" title="Numbered List">&#35; List</button>
+  <button type="button" (click)="format('insertUnorderedList')" title="Bullet List">• List</button>
+  <button type="button" (click)="format('formatBlock', 'H1')" title="Heading 1">H1</button>
+  <button type="button" (click)="format('formatBlock', 'H2')" title="Heading 2">H2</button>
+  <button type="button" (click)="format('formatBlock', 'BLOCKQUOTE')" title="Blockquote">❝</button>
+  <button type="button" (click)="insertLink()" title="Insert Link">🔗</button>
+  <button type="button" (click)="format('undo')" title="Undo">⎌</button>
+  <button type="button" (click)="format('redo')" title="Redo">↻</button>
+  <button type="button" (click)="toggleTableGrid()" title="Insert Table">▦</button>
+  <button type="button" (click)="toggleRawHtml()" title="Show/Hide HTML">&lt;/&gt;</button>
+  <button type="button" (click)="triggerImageInput()" title="Insert Image">🖼️</button>
+  <button type="button" (click)="convertToThymeleafVar()" title="Convert to Thymeleaf Variable">TL</button>
+</div>
+<div *ngIf="!showRawHtml">
+  <div class="wysiwyg-content" contenteditable="true" #editor (input)="onInput()"></div>
+</div>
+<div *ngIf="showRawHtml" class="wysiwyg-raw-html">
+  <h4>Edit Raw HTML:</h4>
+  <textarea [(ngModel)]="rawHtmlInput" rows="12" style="width:100%;font-family:monospace;"></textarea>
+  <h4>Raw HTML Output:</h4>
+  <pre>{{ formattedHtmlPreview }}</pre>
+</div>
+
+<div class="wysiwyg-footer">
+  <label style="display:inline-block; margin-right: 16px; vertical-align: middle;">
+    <input type="checkbox" [(ngModel)]="showFormattedPreview" /> View Source
+  </label>
+  Custom WYSIWYG Editor &copy; 2024
+</div>
+<div *ngIf="showFormattedPreview">
+  <h4>Formatted HTML Preview:</h4>
+  <pre>{{ formattedHtmlPreview }}</pre>
+</div>
+
+<div class="table-grid-popup" *ngIf="showTableGrid" (mouseleave)="hideTableGrid()">
+  <div class="table-grid-label">{{tableGridRows}}x{{tableGridCols}} Table</div>
+  <div class="table-grid">
+    <div *ngFor="let row of tableGridArray; let r = index" class="table-grid-row">
+      <div *ngFor="let col of tableGridArray; let c = index"
+           class="table-grid-cell"
+           [class.selected]="r < tableGridRows && c < tableGridCols"
+           (mouseenter)="setTableGrid(r+1, c+1)"
+           (click)="insertTableFromGrid(r+1, c+1)"></div>
+    </div>
+  </div>
+</div>
+
+<div *ngIf="showImageToolbar" class="image-toolbar" [ngStyle]="{'top.px': imageToolbarTop, 'left.px': imageToolbarLeft}">
+  <button (click)="alignImage('left')" title="Align Left">⬅️</button>
+  <button (click)="alignImage('center')" title="Align Center">↔️</button>
+  <button (click)="alignImage('right')" title="Align Right">➡️</button>
+  <button (click)="removeImage()" title="Remove Image">🗑️</button>
+</div>
+<div *ngIf="selectedImage" class="image-resize-handles"
+     [ngStyle]="{'top.px': imageHandlesTop, 'left.px': imageHandlesLeft, 'width.px': imageHandlesWidth, 'height.px': imageHandlesHeight}">
+  <div class="resize-handle br" (mousedown)="startResize($event, 'br')"></div>
+</div>
+
+<input type="file" #imageInput accept="image/*" style="display:none" (change)="onImageSelected($event)" />
+
+<div *ngIf="showThymeleafDialog" class="thymeleaf-dialog-backdrop">
+  <div class="thymeleaf-dialog">
+    <h4>Insert Thymeleaf Variable</h4>
+    <label>Attribute:
+      <select [(ngModel)]="thymeleafAttr">
+        <option *ngFor="let attr of thymeleafAttrOptions" [value]="attr">{{attr}}</option>
+      </select>
+    </label>
+    <br />
+    <label>Variable / Expression:
+      <input [(ngModel)]="thymeleafVar" placeholder="e.g. user.name" />
+    </label>
+    <br />
+    <button (click)="confirmThymeleafDialog()">Insert</button>
+    <button (click)="cancelThymeleafDialog()">Cancel</button>
+  </div>
+</div>
+
+<div class="json-input-section">
+  <h4>Test with JSON Payload</h4>
+  <textarea [(ngModel)]="jsonPayload" rows="6" style="width:100%;font-family:monospace;" placeholder="Paste JSON here..."></textarea>
+  <button (click)="generatePreview()">Preview</button>
+</div>
+<div *ngIf="previewHtml" class="template-preview">
+  <h4>Preview Output</h4>
+  <div [innerHTML]="previewHtml"></div>
+</div>
+</div>
