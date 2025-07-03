@@ -50,17 +50,44 @@ export class WysiwygEditorComponent implements OnInit, AfterViewInit, AfterViewC
   private savedRange: Range | null = null;
   jsonPayload = '';
   previewHtml = '';
+  // --- Table Column Resize ---
+  private resizingCol = false;
+  private resizeColIndex: number | null = null;
+  private startColX = 0;
+  private startColWidth = 0;
+  private currentTable: HTMLTableElement | null = null;
+  showTableBorderToolbar = false;
+  borderToolbarTop = 0;
+  borderToolbarLeft = 0;
+  borderTarget: HTMLElement | null = null;
+  borderStyle = 'solid';
+  borderColor = '#000000';
+  borderWidth = 1;
+  private savedTableRange: Range | null = null;
+  selectedCell: HTMLTableCellElement | null = null;
+  showCellStyleSidebar = false;
+  showCellStyleIcon = false;
+  cellStyleIconTop = 0;
+  cellStyleIconLeft = 0;
+  cellBgColor = '#ffffff';
+  cellAlign = 'left';
+  cellVAlign = 'top';
+  cellStyleSidebarTop = 0;
+  cellStyleSidebarLeft = 0;
 
   ngOnInit() {
-    document.addEventListener('keydown', this.handleTableTabKey, true);
   }
 
   ngAfterViewInit() {
     this.editorReady = true;
     this.attachEditorFocusHandlers();
-    this.attachTableTabHandler();
     if (this.editor && this.editor.nativeElement) {
       this.editor.nativeElement.addEventListener('click', this.onEditorClick);
+      this.editor.nativeElement.addEventListener('mousedown', this.onTableMousedown);
+      this.editor.nativeElement.addEventListener('mouseup', this.onTableMouseup);
+      this.editor.nativeElement.addEventListener('mousemove', this.onTableMousemove);
+      this.editor.nativeElement.addEventListener('click', this.onTableCellClick, true);
+      this.editor.nativeElement.addEventListener('keydown', this.handleTableTabKey);
     }
   }
 
@@ -78,17 +105,20 @@ export class WysiwygEditorComponent implements OnInit, AfterViewInit, AfterViewC
       this.onInput();
       this.pendingHtmlUpdate = false;
       this.attachEditorFocusHandlers();
-      this.attachTableTabHandler();
+      this.injectTableResizeHandles();
     }
   }
 
   ngOnDestroy() {
-    document.removeEventListener('keydown', this.handleTableTabKey, true);
     this.detachEditorFocusHandlers();
-    this.detachTableTabHandler();
     this.detachDocumentTabHandler();
     if (this.editor && this.editor.nativeElement) {
       this.editor.nativeElement.removeEventListener('click', this.onEditorClick);
+      this.editor.nativeElement.removeEventListener('mousedown', this.onTableMousedown);
+      this.editor.nativeElement.removeEventListener('mouseup', this.onTableMouseup);
+      this.editor.nativeElement.removeEventListener('mousemove', this.onTableMousemove);
+      this.editor.nativeElement.removeEventListener('click', this.onTableCellClick, true);
+      this.editor.nativeElement.removeEventListener('keydown', this.handleTableTabKey);
     }
   }
 
@@ -117,21 +147,6 @@ export class WysiwygEditorComponent implements OnInit, AfterViewInit, AfterViewC
     this.detachDocumentTabHandler();
   };
 
-  attachTableTabHandler() {
-    this.detachTableTabHandler();
-    if (this.editor && this.editor.nativeElement) {
-      this.tableTabHandler = this.handleTableTabKey.bind(this);
-      this.editor.nativeElement.addEventListener('keydown', this.tableTabHandler);
-    }
-  }
-
-  detachTableTabHandler() {
-    if (this.editor && this.editor.nativeElement && this.tableTabHandler) {
-      this.editor.nativeElement.removeEventListener('keydown', this.tableTabHandler);
-      this.tableTabHandler = null;
-    }
-  }
-
   format(command: string, value?: string) {
     if (!this.editor || !this.editor.nativeElement) return;
     document.execCommand(command, false, value);
@@ -148,6 +163,7 @@ export class WysiwygEditorComponent implements OnInit, AfterViewInit, AfterViewC
 
   onInput() {
     if (!this.editor || !this.editor.nativeElement) return;
+    this.injectTableResizeHandles();
     this.updateHtml();
   }
 
@@ -247,6 +263,7 @@ export class WysiwygEditorComponent implements OnInit, AfterViewInit, AfterViewC
     table += '</table><br>';
     this.insertHtmlAtCursor(table);
     this.updateHtml();
+    this.injectTableResizeHandles();
   }
 
   insertHtmlAtCursor(html: string) {
@@ -318,6 +335,7 @@ export class WysiwygEditorComponent implements OnInit, AfterViewInit, AfterViewC
     table += '</table><br>';
     this.insertHtmlAtCursor(table);
     this.updateHtml();
+    this.injectTableResizeHandles();
   }
 
   attachDocumentTabHandler() {
@@ -330,60 +348,77 @@ export class WysiwygEditorComponent implements OnInit, AfterViewInit, AfterViewC
 
   handleTableTabKey = (event: KeyboardEvent) => {
     if (event.key !== 'Tab') return;
+    event.preventDefault();
+    event.stopPropagation();
     const sel = window.getSelection();
     if (!sel || sel.rangeCount === 0) return;
-    // Only process if selection is inside the editor
     if (!this.editor || !this.editor.nativeElement.contains(sel.anchorNode)) return;
     const range = sel.getRangeAt(0);
     let td = range.startContainer as HTMLElement;
     while (td && td.nodeType === 3) td = td.parentElement!;
     if (!td || td.tagName !== 'TD') return;
-    event.preventDefault(); // Always prevent default if in a TD
-    const tr = td.parentElement;
-    const table = tr?.parentElement?.parentElement;
+
+    const tr = td.parentElement as HTMLTableRowElement;
+    const table = tr?.parentElement?.parentElement as HTMLTableElement;
     if (!tr || !table || tr.tagName !== 'TR' || table.tagName !== 'TABLE') return;
-    const tds = Array.from(tr.children).filter(child => child.tagName === 'TD');
-    const trs = Array.from(table.querySelectorAll('tr'));
-    const rowIndex = trs.indexOf(tr as HTMLTableRowElement);
-    const colIndex = tds.indexOf(td);
+
+    const colIndex = (td as HTMLTableCellElement).cellIndex;
+    const rowIndex = Array.prototype.indexOf.call(table.rows, tr);
+
     // If not last cell in row, move to next cell
-    if (colIndex < tds.length - 1) {
-      const nextCell = tds[colIndex + 1];
+    if (colIndex < tr.cells.length - 1) {
+      const nextCell = tr.cells[colIndex + 1];
       this.moveCursorToCell(nextCell);
       return;
     }
     // If last cell in row but not last row, move to first cell of next row
-    if (rowIndex < trs.length - 1) {
-      const nextRow = trs[rowIndex + 1];
-      const nextCell = nextRow.querySelector('td');
+    if (rowIndex < table.rows.length - 1) {
+      const nextRow = table.rows[rowIndex + 1] as HTMLTableRowElement;
+      const nextCell = nextRow.cells[0];
       if (nextCell) {
         this.moveCursorToCell(nextCell);
       }
       return;
     }
     // If last cell of last row, add new row and move to its first cell
-    const newRow = tr.cloneNode(true) as HTMLElement;
-    Array.from(newRow.children).forEach(cell => (cell.innerHTML = '&nbsp;'));
+    const newRow = tr.cloneNode(true) as HTMLTableRowElement;
+    Array.from(newRow.cells).forEach(cell => {
+      cell.innerHTML = '&nbsp;';
+    });
     table.appendChild(newRow);
-    // Update table row count attribute
-    table.setAttribute('data-row-count', String(trs.length + 1));
-    const firstCell = newRow.querySelector('td');
-    if (firstCell) {
-      setTimeout(() => {
+    table.setAttribute('data-row-count', String(table.rows.length));
+    setTimeout(() => {
+      // Always get the latest last row and its first cell
+      const lastRow = table.rows[table.rows.length - 1] as HTMLTableRowElement;
+      const firstCell = lastRow.cells[0];
+      if (firstCell) {
         this.moveCursorToCell(firstCell);
         this.editor?.nativeElement.focus();
-      }, 0);
-    }
+      }
+    }, 0);
     this.updateHtml();
   };
 
   moveCursorToCell(cell: Element) {
     const sel = window.getSelection();
     if (!sel) return;
-    // Place cursor inside a text node in the cell
+    // If the cell only contains &nbsp;, place the caret after it
+    if (
+      cell.childNodes.length === 1 &&
+      cell.firstChild?.nodeType === Node.TEXT_NODE &&
+      cell.textContent === '\u00A0'
+    ) {
+      const range = document.createRange();
+      range.setStart(cell.firstChild, 1);
+      range.collapse(true);
+      sel.removeAllRanges();
+      sel.addRange(range);
+      this.editor?.nativeElement.focus();
+      return;
+    }
+    // Otherwise, place cursor inside a text node in the cell
     let textNode: Node | null = null;
-    const childNodes = Array.from(cell.childNodes);
-    for (const node of childNodes) {
+    for (const node of Array.from(cell.childNodes)) {
       if (node.nodeType === Node.TEXT_NODE) {
         textNode = node;
         break;
@@ -398,7 +433,6 @@ export class WysiwygEditorComponent implements OnInit, AfterViewInit, AfterViewC
     range.collapse(true);
     sel.removeAllRanges();
     sel.addRange(range);
-    // Always focus the editor after moving the cursor
     this.editor?.nativeElement.focus();
   }
 
@@ -429,6 +463,13 @@ export class WysiwygEditorComponent implements OnInit, AfterViewInit, AfterViewC
 
   onEditorClick = (event: MouseEvent) => {
     const target = event.target as HTMLElement;
+    if (
+      target.tagName !== 'TD' &&
+      !target.classList.contains('cell-style-icon') &&
+      !target.closest('.cell-style-sidebar')
+    ) {
+      this.hideCellStyleUI();
+    }
     if (target && target.tagName === 'IMG') {
       this.selectedImage = target as HTMLImageElement;
       this.showImageToolbar = true;
@@ -595,5 +636,238 @@ export class WysiwygEditorComponent implements OnInit, AfterViewInit, AfterViewC
 
   resolveJsonPath(obj: any, path: string): any {
     return path.split('.').reduce((o, k) => (o ? o[k] : undefined), obj);
+  }
+
+  injectTableResizeHandles() {
+    if (!this.editor || !this.editor.nativeElement) return;
+    const tables = this.editor.nativeElement.querySelectorAll('table');
+    tables.forEach((table: any) => {
+      const firstRow = table.rows[0];
+      if (!firstRow) return;
+      Array.from(firstRow.cells).forEach((cell: any, i: number) => {
+        // Remove existing handles
+        const oldHandle = cell.querySelector('.col-resize-handle');
+        if (oldHandle) oldHandle.remove();
+        // Add new handle except for last cell
+        if (i < firstRow.cells.length - 1) {
+          const handle = document.createElement('div');
+          handle.className = 'col-resize-handle';
+          handle.style.position = 'absolute';
+          handle.style.top = '0';
+          handle.style.right = '-6px';
+          handle.style.width = '12px';
+          handle.style.height = '100%';
+          handle.style.cursor = 'col-resize';
+          handle.style.zIndex = '20';
+          handle.style.pointerEvents = 'all';
+          handle.addEventListener('mousedown', (e: MouseEvent) => this.startColResize(e, table, i));
+          cell.style.position = 'relative';
+          cell.appendChild(handle);
+        }
+      });
+    });
+  }
+
+  startColResize(e: MouseEvent, table: HTMLTableElement, colIndex: number) {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log('startColResize', { colIndex });
+    this.resizingCol = true;
+    this.resizeColIndex = colIndex;
+    this.currentTable = table;
+    this.startColX = e.clientX;
+    const firstRow = table.rows[0];
+    if (firstRow && firstRow.cells[colIndex]) {
+      this.startColWidth = firstRow.cells[colIndex].offsetWidth;
+    }
+    document.addEventListener('mousemove', this.onColResizeMove);
+    document.addEventListener('mouseup', this.onColResizeEnd);
+  }
+
+  onColResizeMove = (e: MouseEvent) => {
+    if (!this.resizingCol || this.resizeColIndex === null || !this.currentTable) return;
+    const dx = e.clientX - this.startColX;
+    const firstRow = this.currentTable.rows[0];
+    if (firstRow && this.resizeColIndex !== null && firstRow.cells[this.resizeColIndex]) {
+      // Get table width
+      const tableWidth = this.currentTable.offsetWidth;
+      // Calculate new width in px
+      const newWidthPx = Math.max(30, this.startColWidth + dx);
+      // Calculate new width in percent
+      const percent = Math.max(5, (newWidthPx / tableWidth) * 100);
+      const percentStr = percent.toFixed(2) + '%';
+      // Set table layout to fixed and width 100%
+      this.currentTable.style.tableLayout = 'fixed';
+      this.currentTable.style.width = '100%';
+      // Set all cells in this column
+      Array.from(this.currentTable.rows).forEach((row: any) => {
+        if (this.resizeColIndex !== null && row.cells[this.resizeColIndex]) {
+          row.cells[this.resizeColIndex].style.width = percentStr;
+        }
+      });
+    }
+  };
+
+  onColResizeEnd = () => {
+    this.resizingCol = false;
+    this.resizeColIndex = null;
+    this.currentTable = null;
+    document.removeEventListener('mousemove', this.onColResizeMove);
+    document.removeEventListener('mouseup', this.onColResizeEnd);
+    this.updateHtml();
+  };
+
+  onTableMousedown = (e: MouseEvent) => {
+    // Prevent editor blur when resizing
+    if ((e.target as HTMLElement).classList.contains('col-resize-handle')) {
+      e.preventDefault();
+    }
+  };
+  onTableMouseup = (e: MouseEvent) => {};
+  onTableMousemove = (e: MouseEvent) => {};
+
+  // --- Border Customization ---
+  onTableCellClick = (e: MouseEvent) => {
+    const target = e.target as HTMLElement;
+    if (target.tagName === 'TABLE' || target.tagName === 'TD' || target.tagName === 'TH') {
+      // Always anchor to the table element
+      const tableElem = target.tagName === 'TABLE' ? target as HTMLElement : target.closest('table') as HTMLElement;
+      this.borderTarget = tableElem;
+      this.showTableBorderToolbar = true;
+      const tableRect = tableElem.getBoundingClientRect();
+      // Use tableRect's top/left relative to the viewport, plus window scroll
+      let top = tableRect.top + window.scrollY - 40 - 10; // 40px above the table, minus 10px more
+      let left = tableRect.left + window.scrollX;
+      // Clamp as before
+      const toolbarWidth = 350;
+      const toolbarHeight = 48;
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
+      if (left + toolbarWidth > viewportWidth) {
+        left = viewportWidth - toolbarWidth - 8;
+      }
+      if (left < 0) left = 8;
+      if (top < 0) {
+        // If not enough space above, show below the table
+        top = tableRect.bottom + window.scrollY + 8;
+        if (top + toolbarHeight > viewportHeight) {
+          top = viewportHeight - toolbarHeight - 8;
+        }
+      }
+      this.borderToolbarTop = top;
+      this.borderToolbarLeft = left;
+      // Set current border style
+      const style = window.getComputedStyle(this.borderTarget);
+      this.borderColor = style.borderColor || '#000000';
+      this.borderWidth = parseInt(style.borderWidth || '1', 10);
+      this.borderStyle = style.borderStyle || 'solid';
+      // Save current selection
+      const sel = window.getSelection();
+      if (sel && sel.rangeCount > 0) {
+        this.savedTableRange = sel.getRangeAt(0).cloneRange();
+      }
+    } else {
+      this.showTableBorderToolbar = false;
+      this.borderTarget = null;
+    }
+    if (target.tagName === 'TD') {
+      this.selectedCell = target as HTMLTableCellElement;
+      // Position the floating icon near the cell
+      const rect = this.selectedCell.getBoundingClientRect();
+      const editorRect = this.editor.nativeElement.getBoundingClientRect();
+      this.cellStyleIconTop = rect.top - editorRect.top + 24;
+      this.cellStyleIconLeft = rect.left - editorRect.left + rect.width - 3;
+      this.showCellStyleIcon = true;
+      this.showCellStyleSidebar = false;
+      // Load current styles
+      this.cellBgColor = this.selectedCell.style.backgroundColor || '#ffffff';
+      this.cellAlign = this.selectedCell.style.textAlign || 'left';
+      this.cellVAlign = this.selectedCell.style.verticalAlign || 'top';
+    } else {
+      this.hideCellStyleUI();
+    }
+  };
+
+  applyBorderStyle() {
+    if (!this.borderTarget) return;
+    this.borderTarget.style.border = `${this.borderWidth}px ${this.borderStyle} ${this.borderColor}`;
+    if (this.borderTarget.tagName === 'TABLE') {
+      // Optionally apply to all cells
+      const cells = this.borderTarget.querySelectorAll('td, th');
+      cells.forEach((cell: any) => {
+        cell.style.border = `${this.borderWidth}px ${this.borderStyle} ${this.borderColor}`;
+      });
+    }
+    this.updateHtml();
+  }
+
+  closeBorderToolbar() {
+    this.showTableBorderToolbar = false;
+    this.borderTarget = null;
+    // Restore selection and focus editor
+    if (this.savedTableRange && this.editor && this.editor.nativeElement) {
+      const sel = window.getSelection();
+      sel?.removeAllRanges();
+      sel?.addRange(this.savedTableRange);
+      this.editor.nativeElement.focus();
+    }
+    this.savedTableRange = null;
+  }
+
+  applyCellStyles() {
+    if (!this.selectedCell) return;
+    this.selectedCell.style.backgroundColor = this.cellBgColor;
+    this.selectedCell.style.textAlign = this.cellAlign as any;
+    this.selectedCell.style.verticalAlign = this.cellVAlign as any;
+    this.updateHtml();
+    this.hideCellStyleUI();
+  }
+
+  closeCellStyleSidebar() {
+    this.hideCellStyleUI();
+  }
+
+  openCellStyleSidebar() {
+    if (this.selectedCell && this.editor) {
+      const rect = this.selectedCell.getBoundingClientRect();
+      const editorRect = this.editor.nativeElement.getBoundingClientRect();
+      this.cellStyleSidebarTop = rect.top - editorRect.top + rect.height + 8; // 8px below cell
+      this.cellStyleSidebarLeft = rect.left - editorRect.left+150; // align left with cell
+    }
+    this.showCellStyleSidebar = true;
+    this.showCellStyleIcon = false;
+  }
+
+  hideCellStyleUI() {
+    this.showCellStyleSidebar = false;
+    this.showCellStyleIcon = false;
+    this.selectedCell = null;
+  }
+
+  applyHeading(tag: string) {
+    if (!this.editor || !this.editor.nativeElement) return;
+    this.editor.nativeElement.focus();
+    document.execCommand('formatBlock', false, tag === 'P' ? 'P' : tag);
+    this.updateHtml();
+  }
+
+  applyFontSize(size: string) {
+    if (!this.editor || !this.editor.nativeElement) return;
+    this.editor.nativeElement.focus();
+    // Use a span with style for font size
+    const sel = window.getSelection();
+    if (sel && sel.rangeCount > 0 && !sel.isCollapsed) {
+      const range = sel.getRangeAt(0);
+      const span = document.createElement('span');
+      span.style.fontSize = size;
+      span.appendChild(range.extractContents());
+      range.insertNode(span);
+      // Move cursor after the span
+      range.setStartAfter(span);
+      range.collapse(true);
+      sel.removeAllRanges();
+      sel.addRange(range);
+      this.updateHtml();
+    }
   }
 }

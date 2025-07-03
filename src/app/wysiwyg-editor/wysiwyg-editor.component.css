@@ -195,3 +195,118 @@
   background: #e3e8ff;
   border: 1.5px solid #3b6cff;
 }
+
+/* --- Table Column Resize Handle --- */
+.col-resize-handle {
+  position: absolute;
+  top: 0;
+  right: -6px;
+  width: 12px;
+  height: 100%;
+  cursor: col-resize;
+  background: transparent;
+  z-index: 20;
+  pointer-events: all;
+  transition: background 0.15s;
+}
+.col-resize-handle:hover {
+  background: #3b6cff44;
+}
+
+/* --- Table Border Toolbar --- */
+.table-border-toolbar {
+  position: absolute;
+  z-index: 3000;
+  background: #fff;
+  border: 1.5px solid #3b6cff;
+  border-radius: 6px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.18);
+  padding: 10px 18px 10px 18px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  font-size: 15px;
+  background-color: #f1f0f0;
+}
+.table-border-toolbar label {
+  font-weight: 500;
+  margin-bottom: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.table-border-toolbar button {
+  padding: 4px 14px;
+  font-size: 15px;
+  border-radius: 3px;
+  border: 1px solid #bbb;
+  background: #f4f4f4;
+  cursor: pointer;
+}
+.table-border-toolbar button:hover {
+  background: #e3e8ff;
+  border: 1.5px solid #3b6cff;
+}
+
+/* --- Cell Style Sidebar --- */
+.cell-style-sidebar {
+  width: 260px;
+  background: #fff;
+  border: 2px solid #3b6cff;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px rgba(59,108,255,0.10);
+  padding: 18px 22px 18px 22px;
+  z-index: 4000;
+  min-height: 200px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.cell-style-sidebar h4 {
+  margin-top: 0;
+  margin-bottom: 10px;
+}
+.cell-style-sidebar label {
+  font-weight: 500;
+  margin-bottom: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.cell-style-sidebar button {
+  margin-top: 8px;
+  padding: 4px 14px;
+  font-size: 15px;
+  border-radius: 3px;
+  border: 1px solid #bbb;
+  background: #f4f4f4;
+  cursor: pointer;
+}
+.cell-style-sidebar button:hover {
+  background: #e3e8ff;
+  border: 1.5px solid #3b6cff;
+}
+
+/* --- Floating Cell Style Icon --- */
+.cell-style-icon {
+  position: absolute;
+  z-index: 4100;
+  background: #fff;
+  border: 1.5px solid #3b6cff;
+  border-radius: 50%;
+  box-shadow: 0 2px 8px rgba(59,108,255,0.08);
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s, border 0.15s;
+}
+.cell-style-icon:hover {
+  background: #e3e8ff;
+  border: 2px solid #3b6cff;
+}
+.cell-style-icon svg {
+  display: block;
+}

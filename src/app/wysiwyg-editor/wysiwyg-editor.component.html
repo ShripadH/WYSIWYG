@@ -4,10 +4,26 @@
   <button type="button" (click)="format('italic')" title="Italic"><i>I</i></button>
   <button type="button" (click)="format('underline')" title="Underline"><u>U</u></button>
   <button type="button" (click)="format('strikeThrough')" title="Strikethrough"><s>S</s></button>
-  <button type="button" (click)="format('insertOrderedList')" title="Numbered List">&#35; List</button>
-  <button type="button" (click)="format('insertUnorderedList')" title="Bullet List">• List</button>
-  <button type="button" (click)="format('formatBlock', 'H1')" title="Heading 1">H1</button>
-  <button type="button" (click)="format('formatBlock', 'H2')" title="Heading 2">H2</button>
+  <button type="button" (click)="format('insertOrderedList')" title="Numbered List">
+    <svg width="22" height="22" viewBox="0 0 24 24">
+      <text x="3" y="8" font-size="6" font-family="Arial">1</text>
+      <text x="3" y="14" font-size="6" font-family="Arial">2</text>
+      <text x="3" y="20" font-size="6" font-family="Arial">3</text>
+      <rect x="9" y="5" width="12" height="2" rx="1"/>
+      <rect x="9" y="11" width="12" height="2" rx="1"/>
+      <rect x="9" y="17" width="12" height="2" rx="1"/>
+    </svg>
+  </button>
+  <button type="button" (click)="format('insertUnorderedList')" title="Bullet List">
+    <svg width="22" height="22" viewBox="0 0 24 24">
+      <circle cx="5" cy="6" r="1.5"/>
+      <circle cx="5" cy="12" r="1.5"/>
+      <circle cx="5" cy="18" r="1.5"/>
+      <rect x="9" y="5" width="12" height="2" rx="1"/>
+      <rect x="9" y="11" width="12" height="2" rx="1"/>
+      <rect x="9" y="17" width="12" height="2" rx="1"/>
+    </svg>
+  </button>
   <button type="button" (click)="format('formatBlock', 'BLOCKQUOTE')" title="Blockquote">❝</button>
   <button type="button" (click)="insertLink()" title="Insert Link">🔗</button>
   <button type="button" (click)="format('undo')" title="Undo">⎌</button>
@@ -16,6 +32,23 @@
   <button type="button" (click)="toggleRawHtml()" title="Show/Hide HTML">&lt;/&gt;</button>
   <button type="button" (click)="triggerImageInput()" title="Insert Image">🖼️</button>
   <button type="button" (click)="convertToThymeleafVar()" title="Convert to Thymeleaf Variable">TL</button>
+  <select #headingSelect (change)="applyHeading(headingSelect.value)" title="Heading">
+    <option value="P">Normal</option>
+    <option value="H1">H1</option>
+    <option value="H2">H2</option>
+    <option value="H3">H3</option>
+    <option value="H4">H4</option>
+    <option value="H5">H5</option>
+    <option value="H6">H6</option>
+  </select>
+  <select #fontSizeSelect (change)="applyFontSize(fontSizeSelect.value)" title="Font Size">
+    <option value="12px">12</option>
+    <option value="14px">14</option>
+    <option value="16px">16</option>
+    <option value="18px">18</option>
+    <option value="24px">24</option>
+    <option value="32px">32</option>
+  </select>
 </div>
 <div *ngIf="!showRawHtml">
   <div class="wysiwyg-content" contenteditable="true" #editor (input)="onInput()"></div>
@@ -90,5 +123,63 @@
 <div *ngIf="previewHtml" class="template-preview">
   <h4>Preview Output</h4>
   <div [innerHTML]="previewHtml"></div>
+</div>
+
+<!-- Table Border Customization Toolbar -->
+<div *ngIf="showTableBorderToolbar" class="table-border-toolbar" [ngStyle]="{'top.px': borderToolbarTop, 'left.px': borderToolbarLeft}">
+  <label>Border Color:
+    <input type="color" [(ngModel)]="borderColor" />
+  </label>
+  <label>Width:
+    <input type="number" min="1" max="10" [(ngModel)]="borderWidth" style="width:40px;" /> px
+  </label>
+  <label>Style:
+    <select [(ngModel)]="borderStyle">
+      <option value="solid">Solid</option>
+      <option value="dashed">Dashed</option>
+      <option value="dotted">Dotted</option>
+      <option value="double">Double</option>
+      <option value="groove">Groove</option>
+      <option value="ridge">Ridge</option>
+      <option value="inset">Inset</option>
+      <option value="outset">Outset</option>
+      <option value="none">None</option>
+    </select>
+  </label>
+  <button (click)="applyBorderStyle()">Apply</button>
+  <button (click)="closeBorderToolbar()">Close</button>
+</div>
+
+<!-- Floating Cell Style Icon -->
+<div *ngIf="showCellStyleIcon" class="cell-style-icon"
+     [ngStyle]="{'top.px': cellStyleIconTop, 'left.px': cellStyleIconLeft}"
+     (click)="openCellStyleSidebar()" title="Edit Cell Style">
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#3b6cff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+</div>
+
+<!-- Cell Style Sidebar -->
+<div class="cell-style-sidebar" *ngIf="showCellStyleSidebar"
+     [ngStyle]="{'top.px': cellStyleSidebarTop, 'left.px': cellStyleSidebarLeft, 'position': 'absolute'}">
+  <h4>Cell Styles</h4>
+  <label>Background Color:
+    <input type="color" [(ngModel)]="cellBgColor" />
+  </label>
+  <label>Horizontal Align:
+    <select [(ngModel)]="cellAlign">
+      <option value="left">Left</option>
+      <option value="center">Center</option>
+      <option value="right">Right</option>
+      <option value="justify">Justify</option>
+    </select>
+  </label>
+  <label>Vertical Align:
+    <select [(ngModel)]="cellVAlign">
+      <option value="top">Top</option>
+      <option value="middle">Middle</option>
+      <option value="bottom">Bottom</option>
+    </select>
+  </label>
+  <button (click)="applyCellStyles()">Apply</button>
+  <button (click)="closeCellStyleSidebar()">Close</button>
 </div>
 </div>
