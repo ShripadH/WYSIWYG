@@ -21,3 +21,23 @@ app-root {
   font-family: monospace;
   font-size: 95%;
 }
+
+/* Thymeleaf loop table styling for WYSIWYG editor */
+.thymeleaf-loop-table {
+  border: 2px dashed #e6b800 !important;
+  background: #fffbe6 !important;
+  position: relative;
+}
+.thymeleaf-loop-table::before {
+  content: 'Thymeleaf Loop';
+  position: absolute;
+  top: -1.5em;
+  left: 0;
+  background: #e6b800;
+  color: #fff;
+  font-size: 12px;
+  font-weight: bold;
+  padding: 2px 8px;
+  border-radius: 4px 4px 0 0;
+  z-index: 10;
+}
