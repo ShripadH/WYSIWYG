@@ -158,28 +158,13 @@
 </div>
 
 <!-- Cell Style Sidebar -->
-<div class="cell-style-sidebar" *ngIf="showCellStyleSidebar"
-     [ngStyle]="{'top.px': cellStyleSidebarTop, 'left.px': cellStyleSidebarLeft, 'position': 'absolute'}">
-  <h4>Cell Styles</h4>
-  <label>Background Color:
-    <input type="color" [(ngModel)]="cellBgColor" />
-  </label>
-  <label>Horizontal Align:
-    <select [(ngModel)]="cellAlign">
-      <option value="left">Left</option>
-      <option value="center">Center</option>
-      <option value="right">Right</option>
-      <option value="justify">Justify</option>
-    </select>
-  </label>
-  <label>Vertical Align:
-    <select [(ngModel)]="cellVAlign">
-      <option value="top">Top</option>
-      <option value="middle">Middle</option>
-      <option value="bottom">Bottom</option>
-    </select>
-  </label>
-  <button (click)="applyCellStyles()">Apply</button>
-  <button (click)="closeCellStyleSidebar()">Close</button>
-</div>
+<app-cell-style-sidebar
+  *ngIf="showCellStyleSidebar"
+  [bgColor]="cellBgColor"
+  [align]="cellAlign"
+  [vAlign]="cellVAlign"
+  (apply)="onCellStyleApply($event)"
+  (close)="closeCellStyleSidebar()"
+  [ngStyle]="{'top.px': cellStyleSidebarTop, 'left.px': cellStyleSidebarLeft, 'position': 'absolute'}"
+></app-cell-style-sidebar>
 </div>

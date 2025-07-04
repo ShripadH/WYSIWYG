@@ -8,6 +8,7 @@
 }
 .wysiwyg-wrapper {
   padding: 1em;
+  position: relative;
 }
 
 .wysiwyg-toolbar {

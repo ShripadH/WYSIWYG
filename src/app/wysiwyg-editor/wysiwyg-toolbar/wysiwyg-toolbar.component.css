@@ -1,0 +1,19 @@
+.wysiwyg-toolbar {
+  border: 1px solid #ccc;
+  background: #f9f9f9;
+  padding: 4px;
+  margin-bottom: 4px;
+  display: flex;
+  gap: 4px;
+}
+.wysiwyg-toolbar button, .wysiwyg-toolbar select {
+  background: #fff;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  padding: 2px 8px;
+  cursor: pointer;
+  font-size: 16px;
+}
+.wysiwyg-toolbar button:hover, .wysiwyg-toolbar select:hover {
+  background: #e6e6e6;
+} 

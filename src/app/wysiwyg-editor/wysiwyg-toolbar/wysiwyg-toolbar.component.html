@@ -1,0 +1,45 @@
+<div class="wysiwyg-toolbar">
+  <button type="button" (click)="format.emit({command: 'bold'})" title="Bold"><b>B</b></button>
+  <button type="button" (click)="format.emit({command: 'italic'})" title="Italic"><i>I</i></button>
+  <button type="button" (click)="format.emit({command: 'underline'})" title="Underline"><u>U</u></button>
+  <button type="button" (click)="format.emit({command: 'strikeThrough'})" title="Strikethrough"><s>S</s></button>
+  <button type="button" (click)="format.emit({command: 'insertOrderedList'})" title="Numbered List">
+    <svg width="22" height="22" viewBox="0 0 24 24">
+      <text x="3" y="8" font-size="6" font-family="Arial">1</text>
+      <text x="3" y="14" font-size="6" font-family="Arial">2</text>
+      <text x="3" y="20" font-size="6" font-family="Arial">3</text>
+      <rect x="9" y="5" width="12" height="2" rx="1"/>
+      <rect x="9" y="11" width="12" height="2" rx="1"/>
+      <rect x="9" y="17" width="12" height="2" rx="1"/>
+    </svg>
+  </button>
+  <button type="button" (click)="format.emit({command: 'insertUnorderedList'})" title="Bullet List">
+    <svg width="22" height="22" viewBox="0 0 24 24">
+      <circle cx="5" cy="6" r="1.5"/>
+      <circle cx="5" cy="12" r="1.5"/>
+      <circle cx="5" cy="18" r="1.5"/>
+      <rect x="9" y="5" width="12" height="2" rx="1"/>
+      <rect x="9" y="11" width="12" height="2" rx="1"/>
+      <rect x="9" y="17" width="12" height="2" rx="1"/>
+    </svg>
+  </button>
+  <select #headingSelect (change)="heading.emit(headingSelect.value)" title="Heading">
+    <option value="P">Normal</option>
+    <option value="H1">H1</option>
+    <option value="H2">H2</option>
+    <option value="H3">H3</option>
+    <option value="H4">H4</option>
+    <option value="H5">H5</option>
+    <option value="H6">H6</option>
+  </select>
+  <select #fontSizeSelect (change)="fontSize.emit(fontSizeSelect.value)" title="Font Size">
+    <option value="12px">12</option>
+    <option value="14px">14</option>
+    <option value="16px">16</option>
+    <option value="18px">18</option>
+    <option value="24px">24</option>
+    <option value="32px">32</option>
+  </select>
+  <button type="button" (click)="insertLink.emit()" title="Insert Link">🔗</button>
+  <!-- Add more as needed -->
+</div> 

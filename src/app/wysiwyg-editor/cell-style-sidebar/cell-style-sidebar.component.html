@@ -1,0 +1,23 @@
+<div class="cell-style-sidebar">
+  <h4>Cell Styles</h4>
+  <label>Background Color:
+    <input type="color" [(ngModel)]="bgColor" />
+  </label>
+  <label>Horizontal Align:
+    <select [(ngModel)]="align">
+      <option value="left">Left</option>
+      <option value="center">Center</option>
+      <option value="right">Right</option>
+      <option value="justify">Justify</option>
+    </select>
+  </label>
+  <label>Vertical Align:
+    <select [(ngModel)]="vAlign">
+      <option value="top">Top</option>
+      <option value="middle">Middle</option>
+      <option value="bottom">Bottom</option>
+    </select>
+  </label>
+  <button (click)="apply.emit({bgColor, align, vAlign})">Apply</button>
+  <button (click)="close.emit()">Close</button>
+</div> 
