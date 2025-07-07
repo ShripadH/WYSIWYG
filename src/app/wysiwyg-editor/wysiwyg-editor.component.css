@@ -206,14 +206,14 @@
   height: 100%;
   min-height: 24px;
   cursor: col-resize;
-  background: #e6b80088 !important;
-  border-left: 2px solid #e6b800;
+  background: transparent !important;
+  border-left: none;
   z-index: 20;
   pointer-events: all;
   transition: background 0.15s;
 }
 .col-resize-handle:hover {
-  background: #ffd700cc !important;
+  background: transparent !important;
 }
 table th, table td {
   min-height: 24px;

@@ -143,16 +143,6 @@
   </div>
 </div>
 
-<div class="json-input-section">
-  <h4>Test with JSON Payload</h4>
-  <textarea [(ngModel)]="jsonPayload" rows="6" style="width:100%;font-family:monospace;" placeholder="Paste JSON here..."></textarea>
-  <button (click)="generatePreview()">Preview</button>
-</div>
-<div *ngIf="previewHtml" class="template-preview">
-  <h4>Preview Output</h4>
-  <div [innerHTML]="previewHtml"></div>
-</div>
-
 <!-- Table Border Customization Toolbar -->
 <div *ngIf="showTableBorderToolbar" class="table-border-toolbar" [ngStyle]="{'top.px': borderToolbarTop, 'left.px': borderToolbarLeft}">
   <label>Border Color:
@@ -195,4 +185,20 @@
   (close)="closeCellStyleSidebar()"
   [ngStyle]="{'top.px': cellStyleSidebarTop, 'left.px': cellStyleSidebarLeft, 'position': 'absolute'}"
 ></app-cell-style-sidebar>
+
+<!-- Merge Template Section -->
+<div style="margin-top: 32px; border-top: 1px solid #eee; padding-top: 18px;">
+  <h4>Merge & Render Thymeleaf Template</h4>
+  <label style="font-weight:500; display:block; margin-bottom:6px;">JSON Data:</label>
+  <textarea [(ngModel)]="jsonPayload" rows="6" style="width:100%; font-family:monospace; font-size:15px; border-radius:4px; border:1px solid #ccc; margin-bottom:10px;"></textarea>
+  <button (click)="mergeTemplate()" [disabled]="isMerging" style="padding:6px 18px; font-size:15px; border-radius:3px; border:1px solid #3b6cff; background:#e3e8ff; color:#3b6cff; cursor:pointer;">
+    {{ isMerging ? 'Merging...' : 'Merge & Render' }}
+  </button>
+  <div *ngIf="mergeResult" style="margin-top:24px;">
+    <h5>Rendered Output:</h5>
+    <div style="border:1px solid #bbb; border-radius:6px; background:#fafaff; padding:18px; min-height:40px;">
+      <div [innerHTML]="mergeResult"></div>
+    </div>
+  </div>
+</div>
 </div>

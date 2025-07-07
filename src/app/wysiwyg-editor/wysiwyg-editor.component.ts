@@ -5,11 +5,13 @@ import { EditorDomService } from './editor-dom.service';
 import { TableService } from './table.service';
 import { ImageService } from './image.service';
 import { CellStyleSidebarComponent } from './cell-style-sidebar/cell-style-sidebar.component';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClientModule } from '@angular/common/http';
 
 @Component({
   selector: 'app-wysiwyg-editor',
   standalone: true,
-  imports: [CommonModule, FormsModule, CellStyleSidebarComponent],
+  imports: [CommonModule, FormsModule, CellStyleSidebarComponent, HttpClientModule],
   templateUrl: './wysiwyg-editor.component.html',
   styleUrl: './wysiwyg-editor.component.css'
 })
@@ -52,7 +54,7 @@ export class WysiwygEditorComponent implements OnInit, AfterViewInit, AfterViewC
     'th:text', 'th:utext', 'th:if', 'th:unless', 'th:each', 'th:replace', 'th:include', 'th:with', 'th:attr'
   ];
   private savedRange: Range | null = null;
-  jsonPayload = '';
+  jsonPayload = '{\n  "title": "Dynamic Title",\n  "message": "This is a message from JSON!"\n}';
   previewHtml = '';
   // --- Table Column Resize ---
   private resizingCol = false;
@@ -83,11 +85,16 @@ export class WysiwygEditorComponent implements OnInit, AfterViewInit, AfterViewC
   thymeleafEachFields = '';
   thymeleafEachAddHeader = false;
   thymeleafEachHeaderValues = '';
+  mergeResult: string = '';
+  isMerging: boolean = false;
+  // List of editor-specific classes to remove before sending to API
+  private editorSpecificClassesToRemove = ['thymeleaf-var'];
 
   constructor(
     private editorDom: EditorDomService,
     private tableService: TableService,
-    private imageService: ImageService
+    private imageService: ImageService,
+    private http: HttpClient
   ) {}
 
   ngOnInit() {
@@ -634,8 +641,8 @@ export class WysiwygEditorComponent implements OnInit, AfterViewInit, AfterViewC
             handle.style.height = '100%';
             handle.style.minHeight = '24px';
             handle.style.cursor = 'col-resize';
-            handle.style.background = '#e6b80088';
-            handle.style.borderLeft = '2px solid #e6b800';
+            // handle.style.background = '#e6b80088';
+            // handle.style.borderLeft = '2px solid #e6b800';
             handle.style.zIndex = '20';
             handle.style.pointerEvents = 'all';
             handle.addEventListener('mousedown', (e: MouseEvent) => this.startColResize(e, table, i));
@@ -661,8 +668,8 @@ export class WysiwygEditorComponent implements OnInit, AfterViewInit, AfterViewC
             handle.style.height = '100%';
             handle.style.minHeight = '24px';
             handle.style.cursor = 'col-resize';
-            handle.style.background = '#e6b80088';
-            handle.style.borderLeft = '2px solid #e6b800';
+            // handle.style.background = '#e6b80088';
+            // handle.style.borderLeft = '2px solid #e6b800';
             handle.style.zIndex = '20';
             handle.style.pointerEvents = 'all';
             handle.addEventListener('mousedown', (e: MouseEvent) => this.startColResize(e, table, i));
@@ -935,5 +942,47 @@ export class WysiwygEditorComponent implements OnInit, AfterViewInit, AfterViewC
       this.updateHtml();
       this.closeCellStyleSidebar();
     }
+  }
+
+  // Utility to remove editor-specific classes from HTML string
+  private stripEditorSpecificClasses(html: string): string {
+    const div = document.createElement('div');
+    div.innerHTML = html;
+    this.editorSpecificClassesToRemove.forEach(cls => {
+      div.querySelectorAll('.' + cls).forEach(el => {
+        el.classList.remove(cls);
+      });
+    });
+    return div.innerHTML;
+  }
+
+  mergeTemplate() {
+    this.isMerging = true;
+    let data: any = {};
+    try {
+      data = JSON.parse(this.jsonPayload);
+    } catch (e) {
+      alert('Invalid JSON data!');
+      this.isMerging = false;
+      return;
+    }
+    // Remove editor-specific classes before sending
+    const cleanHtml = this.stripEditorSpecificClasses(this.editor.nativeElement.innerHTML);
+    const body = {
+      html: '<html><body>' + cleanHtml + '</body></html>',
+      data
+    };
+    const headers = new HttpHeaders({ 'Content-Type': 'application/json' });
+    this.http.post('http://localhost:8080/template/merge', body, { headers, responseType: 'text' })
+      .subscribe({
+        next: (result: string) => {
+          this.mergeResult = result;
+          this.isMerging = false;
+        },
+        error: (err) => {
+          alert('Merge failed: ' + (err?.message || err));
+          this.isMerging = false;
+        }
+      });
   }
 }
