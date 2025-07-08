@@ -1,4 +1,4 @@
-import { Component, ViewChild, ElementRef, Output, EventEmitter, AfterViewInit, AfterViewChecked, OnDestroy, OnInit } from '@angular/core';
+import { Component, ViewChild, ElementRef, Output, EventEmitter, AfterViewInit, AfterViewChecked, OnDestroy, OnInit, Renderer2 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { EditorDomService } from './editor-dom.service';
@@ -18,6 +18,7 @@ import { HttpClientModule } from '@angular/common/http';
 export class WysiwygEditorComponent implements OnInit, AfterViewInit, AfterViewChecked, OnDestroy {
   @ViewChild('editor', { static: false }) editor!: ElementRef<HTMLDivElement>;
   @ViewChild('imageInput', { static: false }) imageInput!: ElementRef<HTMLInputElement>;
+  @ViewChild('previewTable', { static: false }) previewTable?: ElementRef<HTMLTableElement>;
 
   @Output() htmlChange = new EventEmitter<string>();
   html: string = '';
@@ -89,12 +90,14 @@ export class WysiwygEditorComponent implements OnInit, AfterViewInit, AfterViewC
   isMerging: boolean = false;
   // List of editor-specific classes to remove before sending to API
   private editorSpecificClassesToRemove = ['thymeleaf-var'];
+  private lastRenderedTableHtml: string = '';
 
   constructor(
     private editorDom: EditorDomService,
     private tableService: TableService,
     private imageService: ImageService,
-    private http: HttpClient
+    private http: HttpClient,
+    private renderer: Renderer2
   ) {}
 
   ngOnInit() {
@@ -132,6 +135,30 @@ export class WysiwygEditorComponent implements OnInit, AfterViewInit, AfterViewC
       this.injectTableResizeHandles();
       // Re-attach event listeners after DOM update
       this.editor.nativeElement.addEventListener('click', this.onTableCellClick, true);
+    }
+    // Render merged table HTML as real table if needed (robust DOM-based)
+    if (this.previewTable && this.mergeResult && this.isTableHtml(this.mergeResult)) {
+      if (this.lastRenderedTableHtml !== this.mergeResult) {
+        // Parse the HTML and extract the <table>
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = this.mergeResult;
+        const tableElem = tempDiv.querySelector('table');
+        if (tableElem && this.previewTable) {
+          // Remove all children from previewTable
+          while (this.previewTable.nativeElement.firstChild) {
+            this.renderer.removeChild(this.previewTable.nativeElement, this.previewTable.nativeElement.firstChild);
+          }
+          // Move all children from parsed tableElem to previewTable
+          Array.from(tableElem.childNodes).forEach(node => {
+            this.renderer.appendChild(this.previewTable!.nativeElement, node.cloneNode(true));
+          });
+          // Copy attributes (like style) from parsed tableElem to previewTable
+          Array.from(tableElem.attributes).forEach(attr => {
+            this.renderer.setAttribute(this.previewTable!.nativeElement, attr.name, attr.value);
+          });
+        }
+        this.lastRenderedTableHtml = this.mergeResult;
+      }
     }
   }
 
@@ -984,5 +1011,9 @@ export class WysiwygEditorComponent implements OnInit, AfterViewInit, AfterViewC
           this.isMerging = false;
         }
       });
+  }
+
+  isTableHtml(html: string): boolean {
+    return /^\s*<table[\s>]/i.test(html);
   }
 }

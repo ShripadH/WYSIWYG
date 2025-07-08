@@ -40,7 +40,14 @@ export class TableService {
   }
 
   insertTable(rows: number, cols: number, editor: HTMLElement): void {
-    let table = '<table border="1" style="border-collapse:collapse;width:100%">';
+    // Add colgroup with equal width cols
+    let colgroup = '<colgroup>';
+    const colWidth = (100 / cols).toFixed(2) + '%';
+    for (let c = 0; c < cols; c++) {
+      colgroup += `<col style=\"width:${colWidth};\">`;
+    }
+    colgroup += '</colgroup>';
+    let table = `<table border=\"1\" style=\"border-collapse:collapse;width:100%\">${colgroup}`;
     for (let r = 0; r < rows; r++) {
       table += '<tr>';
       for (let c = 0; c < cols; c++) {
