@@ -4,14 +4,14 @@ import { FormsModule } from '@angular/forms';
 import { EditorDomService } from './editor-dom.service';
 import { TableService } from './table.service';
 import { ImageService } from './image.service';
-import { CellStyleSidebarComponent } from './cell-style-sidebar/cell-style-sidebar.component';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { HttpClientModule } from '@angular/common/http';
+import { TableStylePopupComponent } from './table-style-popup/table-style-popup.component';
 
 @Component({
   selector: 'app-wysiwyg-editor',
   standalone: true,
-  imports: [CommonModule, FormsModule, CellStyleSidebarComponent, HttpClientModule],
+  imports: [CommonModule, FormsModule, HttpClientModule, TableStylePopupComponent],
   templateUrl: './wysiwyg-editor.component.html',
   styleUrl: './wysiwyg-editor.component.css'
 })
@@ -91,6 +91,21 @@ export class WysiwygEditorComponent implements OnInit, AfterViewInit, AfterViewC
   // List of editor-specific classes to remove before sending to API
   private editorSpecificClassesToRemove = ['thymeleaf-var'];
   private lastRenderedTableHtml: string = '';
+  styleTarget: { type: 'table' | 'row' | 'cell', ref: HTMLElement | null } | null = null;
+  selectedTable: HTMLTableElement | null = null;
+  tableIconTop: number = 0;
+  tableIconLeft: number = 0;
+  rowIconTops: number[] = [];
+  rowIconLeft: number = 0;
+  rowRefs: HTMLTableRowElement[] = [];
+  selectedRow: HTMLTableRowElement | null = null;
+  selectedRowIconTop: number = 0;
+  selectedRowIconLeft: number = 0;
+  rowHandleTops: number[] = [];
+  rowHandleLeft: number = 0;
+  selectedRowForHandle: HTMLTableRowElement | null = null;
+  selectedRowHandleTop: number = 0;
+  selectedRowHandleLeft: number = 0;
 
   constructor(
     private editorDom: EditorDomService,
@@ -113,6 +128,7 @@ export class WysiwygEditorComponent implements OnInit, AfterViewInit, AfterViewC
       this.editor.nativeElement.addEventListener('mousemove', this.onTableMousemove);
       this.editor.nativeElement.addEventListener('click', this.onTableCellClick, true);
       this.editor.nativeElement.addEventListener('keydown', this.handleTableTabKey);
+      this.editor.nativeElement.addEventListener('click', this.onEditorRowClick, true);
       // Focus the editor by default
       this.editor.nativeElement.focus();
     }
@@ -668,8 +684,6 @@ export class WysiwygEditorComponent implements OnInit, AfterViewInit, AfterViewC
             handle.style.height = '100%';
             handle.style.minHeight = '24px';
             handle.style.cursor = 'col-resize';
-            // handle.style.background = '#e6b80088';
-            // handle.style.borderLeft = '2px solid #e6b800';
             handle.style.zIndex = '20';
             handle.style.pointerEvents = 'all';
             handle.addEventListener('mousedown', (e: MouseEvent) => this.startColResize(e, table, i));
@@ -792,7 +806,7 @@ export class WysiwygEditorComponent implements OnInit, AfterViewInit, AfterViewC
     const target = e.target as HTMLElement;
     if (target.tagName === 'TABLE' || target.tagName === 'TD' || target.tagName === 'TH') {
       // Always anchor to the table element
-      const tableElem = target.tagName === 'TABLE' ? target as HTMLElement : target.closest('table') as HTMLElement;
+      const tableElem = target.tagName === 'TABLE' ? target as HTMLTableElement : target.closest('table') as HTMLTableElement;
       this.borderTarget = tableElem;
       this.showTableBorderToolbar = true;
       const tableRect = tableElem.getBoundingClientRect();
@@ -827,23 +841,49 @@ export class WysiwygEditorComponent implements OnInit, AfterViewInit, AfterViewC
       if (sel && sel.rangeCount > 0) {
         this.savedTableRange = sel.getRangeAt(0).cloneRange();
       }
+      if (tableElem) {
+        this.selectedTable = tableElem;
+        const rect = tableElem.getBoundingClientRect();
+        this.tableIconTop = rect.top + window.scrollY - 12;
+        this.tableIconLeft = rect.left + window.scrollX - 12;
+
+        // Gather row refs and positions
+        this.rowRefs = Array.from(tableElem.querySelectorAll('tr'));
+        this.rowIconTops = this.rowRefs.map(row => {
+          const rowRect = row.getBoundingClientRect();
+          return rowRect.top + window.scrollY + rowRect.height / 2 - 11; // center icon vertically
+        });
+        this.rowIconLeft = rect.left + window.scrollX - 28; // left of the table
+
+        // For row handle overlay
+        this.rowHandleTops = this.rowRefs.map(row => {
+          const rowRect = row.getBoundingClientRect();
+          return rowRect.top + window.scrollY + rowRect.height / 2 - 11;
+        });
+        this.rowHandleLeft = rect.left + window.scrollX - 28;
+      }
     } else {
       this.showTableBorderToolbar = false;
       this.borderTarget = null;
     }
-    if (target.tagName === 'TD') {
+    if (target.tagName === 'TD' || target.tagName === 'TH') {
       this.selectedCell = target as HTMLTableCellElement;
-      // Position the floating icon near the cell
       const rect = this.selectedCell.getBoundingClientRect();
       const editorRect = this.editor.nativeElement.getBoundingClientRect();
       this.cellStyleIconTop = rect.top - editorRect.top + 24;
       this.cellStyleIconLeft = rect.left - editorRect.left + rect.width - 3;
       this.showCellStyleIcon = true;
-      console.log('showCellStyleIcon', this.showCellStyleIcon);
-      // Load current styles
       this.cellBgColor = this.selectedCell.style.backgroundColor || '#ffffff';
       this.cellAlign = this.selectedCell.style.textAlign || 'left';
       this.cellVAlign = this.selectedCell.style.verticalAlign || 'top';
+      // Set row handle for the clicked cell's row
+      const row = target.closest('tr') as HTMLTableRowElement;
+      if (row && this.selectedTable && this.selectedTable.contains(row)) {
+        const rowRect = row.getBoundingClientRect();
+        this.selectedRowForHandle = row;
+        this.selectedRowHandleTop = rowRect.top + window.scrollY + rowRect.height / 2 - 11;
+        this.selectedRowHandleLeft = this.selectedTable.getBoundingClientRect().left + window.scrollX - 28;
+      }
     } else {
       this.hideCellStyleUI();
     }
@@ -885,19 +925,15 @@ export class WysiwygEditorComponent implements OnInit, AfterViewInit, AfterViewC
   }
 
   closeCellStyleSidebar() {
+    console.log('closeCellStyleSidebar called', this.showCellStyleSidebar);
     this.hideCellStyleUI();
   }
 
   openCellStyleSidebar() {
-    if (this.selectedCell && this.editor) {
-      const rect = this.selectedCell.getBoundingClientRect();
-      const editorRect = this.editor.nativeElement.getBoundingClientRect();
-      this.cellStyleSidebarTop = rect.top - editorRect.top + rect.height + 8; // 8px below cell
-      this.cellStyleSidebarLeft = rect.left - editorRect.left+150; // align left with cell
+    if (this.selectedCell) {
+      this.styleTarget = { type: 'cell', ref: this.selectedCell };
     }
-    this.showCellStyleSidebar = true;
     this.showCellStyleIcon = false;
-    console.log('showCellStyleSidebar', this.showCellStyleSidebar);
   }
 
   hideCellStyleUI() {
@@ -962,13 +998,15 @@ export class WysiwygEditorComponent implements OnInit, AfterViewInit, AfterViewC
   }
 
   onCellStyleApply(styles: {bgColor: string, align: string, vAlign: string}) {
+    console.log('onCellStyleApply called', styles, this.selectedCell);
     if (this.selectedCell) {
       this.selectedCell.style.backgroundColor = styles.bgColor;
       this.selectedCell.style.textAlign = styles.align;
       this.selectedCell.style.verticalAlign = styles.vAlign;
       this.updateHtml();
-      this.closeCellStyleSidebar();
+      console.log('Cell styles applied', this.selectedCell.style.backgroundColor, this.selectedCell.style.textAlign, this.selectedCell.style.verticalAlign);
     }
+    this.closeCellStyleSidebar();
   }
 
   // Utility to remove editor-specific classes from HTML string
@@ -1015,5 +1053,60 @@ export class WysiwygEditorComponent implements OnInit, AfterViewInit, AfterViewC
 
   isTableHtml(html: string): boolean {
     return /^\s*<table[\s>]/i.test(html);
+  }
+
+  openStylePopup(type: 'table' | 'row' | 'cell', ref: HTMLElement) {
+    this.styleTarget = { type, ref };
+  }
+
+  selectRowForStyle(row: HTMLTableRowElement, top: number, left: number) {
+    this.selectedRow = row;
+    this.selectedRowIconTop = top;
+    this.selectedRowIconLeft = left;
+    this.openStylePopup('row', row);
+  }
+
+  onEditorRowClick = (event: MouseEvent) => {
+    const target = event.target as HTMLElement;
+    // If a cell is clicked, do not trigger row logic
+    if (target.closest('td, th')) return;
+    const row = target.closest('tr') as HTMLTableRowElement;
+    if (row && this.selectedTable && this.selectedTable.contains(row)) {
+      const rowRect = row.getBoundingClientRect();
+      this.selectRowForStyle(
+        row,
+        rowRect.top + window.scrollY + rowRect.height / 2 - 11,
+        this.selectedTable.getBoundingClientRect().left + window.scrollX - 28
+      );
+      event.stopPropagation();
+    } else {
+      this.selectedRow = null;
+    }
+  };
+
+  onApplyStyle(event: { type: 'table' | 'row' | 'cell', styles: any }) {
+    console.log('onApplyStyle', event, this.styleTarget?.ref);
+    if (!this.styleTarget?.ref) return;
+    if (event.type === 'table') {
+      const { borderColor, borderWidth, borderStyle } = event.styles;
+      this.styleTarget.ref.style.border = `${borderWidth}px ${borderStyle} ${borderColor}`;
+      // Optionally apply to all cells
+      const cells = this.styleTarget.ref.querySelectorAll?.('td, th');
+      if (cells) {
+        cells.forEach((cell: any) => {
+          cell.style.border = `${borderWidth}px ${borderStyle} ${borderColor}`;
+        });
+      }
+    } else if (event.type === 'row') {
+      // Add row style application logic here
+      // Example: this.styleTarget.ref.style.backgroundColor = event.styles.bgColor;
+    } else if (event.type === 'cell') {
+      const { bgColor, align, vAlign } = event.styles;
+      this.styleTarget.ref.style.backgroundColor = bgColor;
+      this.styleTarget.ref.style.textAlign = align;
+      this.styleTarget.ref.style.verticalAlign = vAlign;
+    }
+    this.styleTarget = null;
+    this.selectedRow = null;
   }
 }

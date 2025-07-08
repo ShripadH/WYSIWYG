@@ -143,48 +143,12 @@
   </div>
 </div>
 
-<!-- Table Border Customization Toolbar -->
-<div *ngIf="showTableBorderToolbar" class="table-border-toolbar" [ngStyle]="{'top.px': borderToolbarTop, 'left.px': borderToolbarLeft}">
-  <label>Border Color:
-    <input type="color" [(ngModel)]="borderColor" />
-  </label>
-  <label>Width:
-    <input type="number" min="1" max="10" [(ngModel)]="borderWidth" style="width:40px;" /> px
-  </label>
-  <label>Style:
-    <select [(ngModel)]="borderStyle">
-      <option value="solid">Solid</option>
-      <option value="dashed">Dashed</option>
-      <option value="dotted">Dotted</option>
-      <option value="double">Double</option>
-      <option value="groove">Groove</option>
-      <option value="ridge">Ridge</option>
-      <option value="inset">Inset</option>
-      <option value="outset">Outset</option>
-      <option value="none">None</option>
-    </select>
-  </label>
-  <button (click)="applyBorderStyle()">Apply</button>
-  <button (click)="closeBorderToolbar()">Close</button>
-</div>
-
 <!-- Floating Cell Style Icon -->
 <div *ngIf="showCellStyleIcon" class="cell-style-icon"
      [ngStyle]="{'top.px': cellStyleIconTop, 'left.px': cellStyleIconLeft}"
      (click)="openCellStyleSidebar()" title="Edit Cell Style">
   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#3b6cff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
 </div>
-
-<!-- Cell Style Sidebar -->
-<app-cell-style-sidebar
-  *ngIf="showCellStyleSidebar"
-  [bgColor]="cellBgColor"
-  [align]="cellAlign"
-  [vAlign]="cellVAlign"
-  (apply)="onCellStyleApply($event)"
-  (close)="closeCellStyleSidebar()"
-  [ngStyle]="{'top.px': cellStyleSidebarTop, 'left.px': cellStyleSidebarLeft, 'position': 'absolute'}"
-></app-cell-style-sidebar>
 
 <!-- Merge Template Section -->
 <div style="margin-top: 32px; border-top: 1px solid #eee; padding-top: 18px;">
@@ -201,4 +165,28 @@
     </div>
   </div>
 </div>
+
+<!-- Floating Table Style Icon -->
+<div *ngIf="selectedTable"
+     class="table-style-icon"
+     [ngStyle]="{top: tableIconTop + 'px', left: tableIconLeft + 'px', position: 'absolute', zIndex: 999}"
+     (click)="openStylePopup('table', selectedTable)">
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>
+</div>
+
+<!-- Floating Row Handle for Selected Row Only -->
+<div *ngIf="selectedRowForHandle"
+     class="row-style-handle"
+     [ngStyle]="{top: selectedRowHandleTop + 'px', left: selectedRowHandleLeft + 'px', position: 'absolute', zIndex: 999}"
+     (click)="selectRowForStyle(selectedRowForHandle, selectedRowHandleTop, selectedRowHandleLeft)">
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ee9a5f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18"/></svg>
+</div>
+
+<app-table-style-popup
+  *ngIf="styleTarget"
+  [styleType]="styleTarget.type"
+  [target]="styleTarget.ref"
+  (applyStyle)="onApplyStyle($event)"
+  (close)="styleTarget = null"
+></app-table-style-popup>
 </div>

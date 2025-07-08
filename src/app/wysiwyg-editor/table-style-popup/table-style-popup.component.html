@@ -1,0 +1,60 @@
+<div class="popup-overlay">
+  <div class="popup-container">
+    <h2 *ngIf="styleType === 'table'">Table Styles</h2>
+    <h2 *ngIf="styleType === 'row'">Row Styles</h2>
+    <h2 *ngIf="styleType === 'cell'">Cell Styles</h2>
+
+    <div *ngIf="styleType === 'table'">
+      <label>Border Color:
+        <input type="color" [(ngModel)]="borderColor" (ngModelChange)="onBorderColorChange($event)" />
+      </label>
+      <label>Width:
+        <input type="number" min="1" max="10" [(ngModel)]="borderWidth" (ngModelChange)="onBorderWidthChange($event)" style="width:40px;" /> px
+      </label>
+      <label>Style:
+        <select [(ngModel)]="borderStyle" (ngModelChange)="onBorderStyleChange($event)">
+          <option value="solid">Solid</option>
+          <option value="dashed">Dashed</option>
+          <option value="dotted">Dotted</option>
+          <option value="double">Double</option>
+          <option value="groove">Groove</option>
+          <option value="ridge">Ridge</option>
+          <option value="inset">Inset</option>
+          <option value="outset">Outset</option>
+          <option value="none">None</option>
+        </select>
+      </label>
+    </div>
+
+    <div *ngIf="styleType === 'row'">
+      <!-- Add row style controls here -->
+      <p>Row style controls (to be implemented)...</p>
+    </div>
+
+    <div *ngIf="styleType === 'cell'">
+      <label>Background Color:
+        <input type="color" [(ngModel)]="cellBgColor" (ngModelChange)="onCellBgColorChange($event)" />
+      </label>
+      <label>Horizontal Align:
+        <select [(ngModel)]="cellAlign" (ngModelChange)="onCellAlignChange($event)">
+          <option value="left">Left</option>
+          <option value="center">Center</option>
+          <option value="right">Right</option>
+          <option value="justify">Justify</option>
+        </select>
+      </label>
+      <label>Vertical Align:
+        <select [(ngModel)]="cellVAlign" (ngModelChange)="onCellVAlignChange($event)">
+          <option value="top">Top</option>
+          <option value="middle">Middle</option>
+          <option value="bottom">Bottom</option>
+        </select>
+      </label>
+    </div>
+
+    <div class="popup-actions">
+      <button (click)="apply()">Apply</button>
+      <button (click)="closePopup()">Close</button>
+    </div>
+  </div>
+</div>

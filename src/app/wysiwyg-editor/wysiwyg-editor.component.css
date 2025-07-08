@@ -297,7 +297,7 @@ table th, table td {
 /* --- Floating Cell Style Icon --- */
 .cell-style-icon {
   position: absolute;
-  z-index: 4100;
+  z-index: 999;
   background: #fff;
   border: 1.5px solid #3b6cff;
   border-radius: 50%;
@@ -335,4 +335,17 @@ table th, table td {
   padding: 2px 8px;
   border-radius: 4px 4px 0 0;
   z-index: 10;
+}
+
+.row-style-handle {
+  width: 22px !important;
+  height: 22px !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  border-radius: 50%;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  cursor: pointer;
+  border: 2px solid #ee9a5f;
 }
