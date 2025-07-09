@@ -628,21 +628,6 @@ export class WysiwygEditorComponent implements OnInit, AfterViewInit, AfterViewC
     this.updateHtml();
   };
 
-  convertToThymeleafVar() {
-    if (!this.editor || !this.editor.nativeElement) return;
-    const sel = window.getSelection();
-    if (!sel || sel.rangeCount === 0 || sel.isCollapsed) {
-      alert('Please select some text to convert to a Thymeleaf variable.');
-      return;
-    }
-    this.savedRange = sel.getRangeAt(0).cloneRange();
-    this.thymeleafAttr = this.thymeleafAttrOptions[0];
-    this.thymeleafVar = '';
-    this.showThymeleafDialog = true;
-    this.showThymeleafAttrDialog = false;
-    this.showThymeleafMenu = false;
-  }
-
   confirmThymeleafDialog() {
     if (!this.savedRange) {
       this.showThymeleafDialog = false;
@@ -652,37 +637,6 @@ export class WysiwygEditorComponent implements OnInit, AfterViewInit, AfterViewC
     sel?.removeAllRanges();
     sel?.addRange(this.savedRange);
     const range = this.savedRange;
-    if (this.thymeleafAttr === 'th:each') {
-      const variable = this.thymeleafEachVar || 'item';
-      const collection = this.thymeleafEachCollection || 'items';
-      const fields = (this.thymeleafEachFields || '').split(',').map(f => f.trim()).filter(f => f);
-      if (fields.length === 0) {
-        alert('Please specify at least one field.');
-        this.showThymeleafDialog = false;
-        return;
-      }
-      let tableHtml = '<table class="thymeleaf-loop-table">';
-      if (this.thymeleafEachAddHeader) {
-        const headerVals = (this.thymeleafEachHeaderValues || '').split(',').map(h => h.trim());
-        tableHtml += '<tr>';
-        fields.forEach((field, i) => {
-          const header = headerVals[i] || field.charAt(0).toUpperCase() + field.slice(1);
-          tableHtml += '<th>' + header + '</th>';
-        });
-        tableHtml += '</tr>';
-      }
-      tableHtml += '<tr th:each="' + variable + ': ${' + collection + '11}">';
-      fields.forEach(field => {
-        tableHtml += '<td th:text="${' + variable + '.' + field + '}">' + variable + '.' + field + '</td>';
-      });
-      tableHtml += '</tr></table>';
-      this.insertHtmlAtCursor(tableHtml);
-      this.injectTableResizeHandles();
-      this.showThymeleafDialog = false;
-      this.savedRange = null;
-      this.updateHtml();
-      return;
-    }
     if (!this.thymeleafVar) {
       this.showThymeleafDialog = false;
       return;

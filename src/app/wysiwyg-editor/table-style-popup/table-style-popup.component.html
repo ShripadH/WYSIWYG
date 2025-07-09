@@ -4,14 +4,17 @@
     <h2 *ngIf="styleType === 'row'">Row Styles</h2>
     <h2 *ngIf="styleType === 'cell'">Cell Styles</h2>
 
-    <div *ngIf="styleType === 'table'">
-      <label>Border Color:
+    <div *ngIf="styleType === 'table'" class="style-section">
+      <div class="style-control">
+        <label>Border Color:</label>
         <input type="color" [(ngModel)]="borderColor" (ngModelChange)="onBorderColorChange($event)" />
-      </label>
-      <label>Width:
+      </div>
+      <div class="style-control">
+        <label>Width:</label>
         <input type="number" min="1" max="10" [(ngModel)]="borderWidth" (ngModelChange)="onBorderWidthChange($event)" class="input-width-small" /> px
-      </label>
-      <label>Style:
+      </div>
+      <div class="style-control">
+        <label>Style:</label>
         <select [(ngModel)]="borderStyle" (ngModelChange)="onBorderStyleChange($event)">
           <option value="solid">Solid</option>
           <option value="dashed">Dashed</option>
@@ -23,17 +26,20 @@
           <option value="outset">Outset</option>
           <option value="none">None</option>
         </select>
-      </label>
+      </div>
     </div>
 
-    <div *ngIf="styleType === 'row'">
-      <label>Top Border Color:
+    <div *ngIf="styleType === 'row'" class="style-section">
+      <div class="style-control">
+        <label>Top Border Color:</label>
         <input type="color" [(ngModel)]="topBorderColor" />
-      </label>
-      <label>Top Border Width:
+      </div>
+      <div class="style-control">
+        <label>Top Border Width:</label>
         <input type="number" min="0" max="10" [(ngModel)]="topBorderWidth" class="input-width-small" /> px
-      </label>
-      <label>Top Border Style:
+      </div>
+      <div class="style-control">
+        <label>Top Border Style:</label>
         <select [(ngModel)]="topBorderStyle">
           <option value="solid">Solid</option>
           <option value="dashed">Dashed</option>
@@ -45,14 +51,17 @@
           <option value="outset">Outset</option>
           <option value="none">None</option>
         </select>
-      </label>
-      <label>Bottom Border Color:
+      </div>
+      <div class="style-control">
+        <label>Bottom Border Color:</label>
         <input type="color" [(ngModel)]="bottomBorderColor" />
-      </label>
-      <label>Bottom Border Width:
+      </div>
+      <div class="style-control">
+        <label>Bottom Border Width:</label>
         <input type="number" min="0" max="10" [(ngModel)]="bottomBorderWidth" class="input-width-small" /> px
-      </label>
-      <label>Bottom Border Style:
+      </div>
+      <div class="style-control">
+        <label>Bottom Border Style:</label>
         <select [(ngModel)]="bottomBorderStyle">
           <option value="solid">Solid</option>
           <option value="dashed">Dashed</option>
@@ -64,28 +73,31 @@
           <option value="outset">Outset</option>
           <option value="none">None</option>
         </select>
-      </label>
+      </div>
     </div>
 
-    <div *ngIf="styleType === 'cell'">
-      <label>Background Color:
+    <div *ngIf="styleType === 'cell'" class="style-section">
+      <div class="style-control">
+        <label>Background Color:</label>
         <input type="color" [(ngModel)]="cellBgColor" (ngModelChange)="onCellBgColorChange($event)" />
-      </label>
-      <label>Horizontal Align:
+      </div>
+      <div class="style-control">
+        <label>Horizontal Align:</label>
         <select [(ngModel)]="cellAlign" (ngModelChange)="onCellAlignChange($event)">
           <option value="left">Left</option>
           <option value="center">Center</option>
           <option value="right">Right</option>
           <option value="justify">Justify</option>
         </select>
-      </label>
-      <label>Vertical Align:
+      </div>
+      <div class="style-control">
+        <label>Vertical Align:</label>
         <select [(ngModel)]="cellVAlign" (ngModelChange)="onCellVAlignChange($event)">
           <option value="top">Top</option>
           <option value="middle">Middle</option>
           <option value="bottom">Bottom</option>
         </select>
-      </label>
+      </div>
     </div>
 
     <div class="popup-actions">
