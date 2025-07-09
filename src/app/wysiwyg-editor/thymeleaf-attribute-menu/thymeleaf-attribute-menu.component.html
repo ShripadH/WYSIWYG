@@ -1,0 +1,58 @@
+<p>thymeleaf-attribute-menu works!</p>
+
+<!-- Context Menu -->
+<div *ngIf="showMenu && menuPosition" class="thymeleaf-context-menu" [ngStyle]="{'top.px': menuPosition.y, 'left.px': menuPosition.x}">
+  <div class="menu-title">Add/Edit Thymeleaf Attribute</div>
+  <div class="menu-list">
+    <div *ngFor="let attr of supportedAttributes" class="menu-item" (click)="onMenuSelect(attr)">
+      {{ attr }}
+    </div>
+  </div>
+  <div class="menu-divider"></div>
+  <div *ngIf="presentAttributes.length > 0">
+    <div class="menu-title" style="font-size:13px; color:#888; padding:4px 16px 2px 16px;">Remove Attribute</div>
+    <div *ngFor="let attr of presentAttributes" class="menu-item remove" (click)="removeAttribute(attr)">
+      {{ attr }}
+    </div>
+  </div>
+  <div class="menu-item close" (click)="onMenuClose()">Close Menu</div>
+</div>
+
+<!-- Attribute Dialog -->
+<div *ngIf="showDialog" class="thymeleaf-attr-dialog-backdrop">
+  <div class="thymeleaf-attr-dialog">
+    <div class="dialog-title">Edit Thymeleaf Attribute</div>
+    <div class="dialog-attr">Attribute: <b>{{ selectedAttribute }}</b></div>
+    <ng-container *ngIf="selectedAttribute === 'th:each'; else genericAttrDialog">
+      <div class="dialog-field">
+        <label>Variable Name:</label>
+        <input type="text" [(ngModel)]="eachVar" placeholder="e.g. student" />
+      </div>
+      <div class="dialog-field">
+        <label>Collection Name:</label>
+        <input type="text" [(ngModel)]="eachCollection" placeholder="e.g. students" />
+      </div>
+      <div class="dialog-field">
+        <label>Fields (comma-separated):</label>
+        <input type="text" [(ngModel)]="eachFields" placeholder="e.g. id,name" />
+      </div>
+      <div class="dialog-field">
+        <label><input type="checkbox" [(ngModel)]="eachAddHeader" /> Add header row</label>
+      </div>
+      <div class="dialog-field" *ngIf="eachAddHeader">
+        <label>Header display values (comma-separated):</label>
+        <input type="text" [(ngModel)]="eachHeaderValues" placeholder="e.g. ID,Name" />
+      </div>
+    </ng-container>
+    <ng-template #genericAttrDialog>
+      <div class="dialog-field">
+        <label>Value:</label>
+        <input type="text" [(ngModel)]="attributeValue" placeholder="Enter value or expression..." />
+      </div>
+    </ng-template>
+    <div class="dialog-actions">
+      <button (click)="onDialogSubmit()">Apply</button>
+      <button (click)="onDialogCancel()">Cancel</button>
+    </div>
+  </div>
+</div>

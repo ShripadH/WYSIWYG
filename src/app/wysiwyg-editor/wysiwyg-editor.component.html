@@ -63,13 +63,13 @@
 </div>
 <div *ngIf="showRawHtml" class="wysiwyg-raw-html">
   <h4>Edit Raw HTML:</h4>
-  <textarea [(ngModel)]="rawHtmlInput" rows="12" style="width:100%;font-family:monospace;"></textarea>
+  <textarea [(ngModel)]="rawHtmlInput" rows="12" class="full-width-monospace"></textarea>
   <h4>Raw HTML Output:</h4>
   <pre>{{ formattedHtmlPreview }}</pre>
 </div>
 
 <div class="wysiwyg-footer">
-  <label style="display:inline-block; margin-right: 16px; vertical-align: middle;">
+  <label class="inline-label">
     <input type="checkbox" [(ngModel)]="showFormattedPreview" /> View Source
   </label>
   Custom WYSIWYG Editor &copy; 2024
@@ -103,7 +103,7 @@
   <div class="resize-handle br" (mousedown)="startResize($event, 'br')"></div>
 </div>
 
-<input type="file" #imageInput accept="image/*" style="display:none" (change)="onImageSelected($event)" />
+<input type="file" #imageInput accept="image/*" class="hidden-input" (change)="onImageSelected($event)" />
 
 <div *ngIf="showThymeleafDialog" class="thymeleaf-dialog-backdrop">
   <div class="thymeleaf-dialog">
@@ -151,16 +151,16 @@
 </div>
 
 <!-- Merge Template Section -->
-<div style="margin-top: 32px; border-top: 1px solid #eee; padding-top: 18px;">
+<div class="merge-section">
   <h4>Merge & Render Thymeleaf Template</h4>
-  <label style="font-weight:500; display:block; margin-bottom:6px;">JSON Data:</label>
-  <textarea [(ngModel)]="jsonPayload" rows="6" style="width:100%; font-family:monospace; font-size:15px; border-radius:4px; border:1px solid #ccc; margin-bottom:10px;"></textarea>
-  <button (click)="mergeTemplate()" [disabled]="isMerging" style="padding:6px 18px; font-size:15px; border-radius:3px; border:1px solid #3b6cff; background:#e3e8ff; color:#3b6cff; cursor:pointer;">
+  <label class="json-label">JSON Data:</label>
+  <textarea [(ngModel)]="jsonPayload" rows="6" class="merge-textarea"></textarea>
+  <button (click)="mergeTemplate()" [disabled]="isMerging" class="merge-button">
     {{ isMerging ? 'Merging...' : 'Merge & Render' }}
   </button>
-  <div *ngIf="mergeResult" style="margin-top:24px;">
+  <div *ngIf="mergeResult" class="merge-result">
     <h5>Rendered Output:</h5>
-    <div style="border:1px solid #bbb; border-radius:6px; background:#fafaff; padding:18px; min-height:40px;">
+    <div class="merge-result-box">
       <div [innerHTML]="mergeResult"></div>
     </div>
   </div>
@@ -189,4 +189,16 @@
   (applyStyle)="onApplyStyle($event)"
   (close)="styleTarget = null"
 ></app-table-style-popup>
+
+<app-thymeleaf-attribute-menu
+  [targetElement]="thymeleafTargetElement"
+  [menuPosition]="thymeleafMenuPosition"
+  [showMenu]="showThymeleafMenu"
+  [showDialog]="showThymeleafAttrDialog"
+  (attributeChange)="onThymeleafAttributeChange($event)"
+  (closeMenu)="onThymeleafMenuClose()"
+  (openDialog)="onThymeleafOpenDialog($event)"
+  (closeDialog)="onThymeleafCloseDialog()"
+  (insertHtml)="onInsertHtml($event)"
+></app-thymeleaf-attribute-menu>
 </div>

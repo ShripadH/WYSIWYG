@@ -54,3 +54,6 @@ button:hover {
   background: #e0e7ff;
   border-color: #3b82f6;
 }
+.input-width-small {
+  width: 40px;
+}

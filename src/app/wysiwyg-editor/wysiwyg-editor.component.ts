@@ -7,11 +7,13 @@ import { ImageService } from './image.service';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { HttpClientModule } from '@angular/common/http';
 import { TableStylePopupComponent } from './table-style-popup/table-style-popup.component';
+import { ThymeleafAttributeMenuComponent } from './thymeleaf-attribute-menu/thymeleaf-attribute-menu.component';
+import { ThymeleafRenderService } from './thymeleaf-render.service';
 
 @Component({
   selector: 'app-wysiwyg-editor',
   standalone: true,
-  imports: [CommonModule, FormsModule, HttpClientModule, TableStylePopupComponent],
+  imports: [CommonModule, FormsModule, HttpClientModule, TableStylePopupComponent, ThymeleafAttributeMenuComponent],
   templateUrl: './wysiwyg-editor.component.html',
   styleUrl: './wysiwyg-editor.component.css'
 })
@@ -57,41 +59,11 @@ export class WysiwygEditorComponent implements OnInit, AfterViewInit, AfterViewC
   private savedRange: Range | null = null;
   jsonPayload = '{\n  "title": "Dynamic Title",\n  "message": "This is a message from JSON!"\n}';
   previewHtml = '';
-  // --- Table Column Resize ---
   private resizingCol = false;
   private resizeColIndex: number | null = null;
   private startColX = 0;
   private startColWidth = 0;
   private currentTable: HTMLTableElement | null = null;
-  showTableBorderToolbar = false;
-  borderToolbarTop = 0;
-  borderToolbarLeft = 0;
-  borderTarget: HTMLElement | null = null;
-  borderStyle = 'solid';
-  borderColor = '#000000';
-  borderWidth = 1;
-  private savedTableRange: Range | null = null;
-  selectedCell: HTMLTableCellElement | null = null;
-  showCellStyleSidebar = false;
-  showCellStyleIcon = false;
-  cellStyleIconTop = 0;
-  cellStyleIconLeft = 0;
-  cellBgColor = '#ffffff';
-  cellAlign = 'left';
-  cellVAlign = 'top';
-  cellStyleSidebarTop = 0;
-  cellStyleSidebarLeft = 0;
-  thymeleafEachVar = '';
-  thymeleafEachCollection = '';
-  thymeleafEachFields = '';
-  thymeleafEachAddHeader = false;
-  thymeleafEachHeaderValues = '';
-  mergeResult: string = '';
-  isMerging: boolean = false;
-  // List of editor-specific classes to remove before sending to API
-  private editorSpecificClassesToRemove = ['thymeleaf-var'];
-  private lastRenderedTableHtml: string = '';
-  styleTarget: { type: 'table' | 'row' | 'cell', ref: HTMLElement | null } | null = null;
   selectedTable: HTMLTableElement | null = null;
   tableIconTop: number = 0;
   tableIconLeft: number = 0;
@@ -106,13 +78,36 @@ export class WysiwygEditorComponent implements OnInit, AfterViewInit, AfterViewC
   selectedRowForHandle: HTMLTableRowElement | null = null;
   selectedRowHandleTop: number = 0;
   selectedRowHandleLeft: number = 0;
+  styleTarget: { type: 'table' | 'row' | 'cell', ref: HTMLElement | null } | null = null;
+  selectedCell: HTMLTableCellElement | null = null;
+  showCellStyleIcon = false;
+  cellStyleIconTop = 0;
+  cellStyleIconLeft = 0;
+  cellBgColor = '#ffffff';
+  cellAlign = 'left';
+  cellVAlign = 'top';
+  thymeleafEachVar = '';
+  thymeleafEachCollection = '';
+  thymeleafEachFields = '';
+  thymeleafEachAddHeader = false;
+  thymeleafEachHeaderValues = '';
+  mergeResult: string = '';
+  isMerging: boolean = false;
+  private editorSpecificClassesToRemove = ['thymeleaf-var'];
+  private lastRenderedTableHtml: string = '';
+  // Thymeleaf attribute menu state
+  thymeleafMenuPosition: { x: number, y: number } | null = null;
+  showThymeleafMenu = false;
+  showThymeleafAttrDialog = false;
+  thymeleafTargetElement: HTMLElement | null = null;
 
   constructor(
     private editorDom: EditorDomService,
     private tableService: TableService,
     private imageService: ImageService,
     private http: HttpClient,
-    private renderer: Renderer2
+    private renderer: Renderer2,
+    private thymeleafRender: ThymeleafRenderService
   ) {}
 
   ngOnInit() {
@@ -129,6 +124,7 @@ export class WysiwygEditorComponent implements OnInit, AfterViewInit, AfterViewC
       this.editor.nativeElement.addEventListener('click', this.onTableCellClick, true);
       this.editor.nativeElement.addEventListener('keydown', this.handleTableTabKey);
       this.editor.nativeElement.addEventListener('click', this.onEditorRowClick, true);
+      this.editor.nativeElement.addEventListener('contextmenu', this.onEditorContextMenu, true);
       // Focus the editor by default
       this.editor.nativeElement.focus();
     }
@@ -188,6 +184,7 @@ export class WysiwygEditorComponent implements OnInit, AfterViewInit, AfterViewC
       this.editor.nativeElement.removeEventListener('mousemove', this.onTableMousemove);
       this.editor.nativeElement.removeEventListener('click', this.onTableCellClick, true);
       this.editor.nativeElement.removeEventListener('keydown', this.handleTableTabKey);
+      this.editor.nativeElement.removeEventListener('contextmenu', this.onEditorContextMenu, true);
     }
   }
 
@@ -242,6 +239,8 @@ export class WysiwygEditorComponent implements OnInit, AfterViewInit, AfterViewC
     const rawHtml = `<html><body>${bodyContent}</body></html>`;
     this.html = this.formatHtml(rawHtml);
     this.htmlChange.emit(this.html);
+    // Log the updated html state
+    console.log('[updateHtml] Updated html state:', this.html);
     // Re-attach event listeners after content update
     this.attachEditorFocusHandlers();
     this.editor.nativeElement.addEventListener('click', this.onTableCellClick, true);
@@ -350,6 +349,10 @@ export class WysiwygEditorComponent implements OnInit, AfterViewInit, AfterViewC
           range.collapse(true);
           sel.removeAllRanges();
           sel.addRange(range);
+        }
+        // Log the editor DOM after insertion
+        if (this.editor && this.editor.nativeElement) {
+          console.log('[insertHtmlAtCursor] Editor innerHTML after insertion:', this.editor.nativeElement.innerHTML);
         }
       }
     }
@@ -651,16 +654,8 @@ export class WysiwygEditorComponent implements OnInit, AfterViewInit, AfterViewC
     }
     // Get the current HTML from the editor
     let html = this.editor?.nativeElement.innerHTML || '';
-    // Replace Thymeleaf variables (e.g., th:text="${user.name}")
-    html = html.replace(/th:text="\$\{([\w.]+)\}"[^>]*>(.*?)<\/span>/g, (match, varName, inner) => {
-      const value = this.resolveJsonPath(data, varName) ?? '';
-      return `>${value}</span>`;
-    });
-    this.previewHtml = html;
-  }
-
-  resolveJsonPath(obj: any, path: string): any {
-    return path.split('.').reduce((o, k) => (o ? o[k] : undefined), obj);
+    // Use ThymeleafRenderService to process all th:* attributes
+    this.previewHtml = this.thymeleafRender.renderTemplate(html, data);
   }
 
   injectTableResizeHandles() {
@@ -807,40 +802,7 @@ export class WysiwygEditorComponent implements OnInit, AfterViewInit, AfterViewC
     if (target.tagName === 'TABLE' || target.tagName === 'TD' || target.tagName === 'TH') {
       // Always anchor to the table element
       const tableElem = target.tagName === 'TABLE' ? target as HTMLTableElement : target.closest('table') as HTMLTableElement;
-      this.borderTarget = tableElem;
-      this.showTableBorderToolbar = true;
-      const tableRect = tableElem.getBoundingClientRect();
-      // Use tableRect's top/left relative to the viewport, plus window scroll
-      let top = tableRect.top + window.scrollY - 40 - 10; // 40px above the table, minus 10px more
-      let left = tableRect.left + window.scrollX;
-      // Clamp as before
-      const toolbarWidth = 350;
-      const toolbarHeight = 48;
-      const viewportWidth = window.innerWidth;
-      const viewportHeight = window.innerHeight;
-      if (left + toolbarWidth > viewportWidth) {
-        left = viewportWidth - toolbarWidth - 8;
-      }
-      if (left < 0) left = 8;
-      if (top < 0) {
-        // If not enough space above, show below the table
-        top = tableRect.bottom + window.scrollY + 8;
-        if (top + toolbarHeight > viewportHeight) {
-          top = viewportHeight - toolbarHeight - 8;
-        }
-      }
-      this.borderToolbarTop = top;
-      this.borderToolbarLeft = left;
-      // Set current border style
-      const style = window.getComputedStyle(this.borderTarget);
-      this.borderColor = style.borderColor || '#000000';
-      this.borderWidth = parseInt(style.borderWidth || '1', 10);
-      this.borderStyle = style.borderStyle || 'solid';
-      // Save current selection
-      const sel = window.getSelection();
-      if (sel && sel.rangeCount > 0) {
-        this.savedTableRange = sel.getRangeAt(0).cloneRange();
-      }
+      // Do NOT set styleTarget here for table styles!
       if (tableElem) {
         this.selectedTable = tableElem;
         const rect = tableElem.getBoundingClientRect();
@@ -863,8 +825,7 @@ export class WysiwygEditorComponent implements OnInit, AfterViewInit, AfterViewC
         this.rowHandleLeft = rect.left + window.scrollX - 28;
       }
     } else {
-      this.showTableBorderToolbar = false;
-      this.borderTarget = null;
+      this.styleTarget = null;
     }
     if (target.tagName === 'TD' || target.tagName === 'TH') {
       this.selectedCell = target as HTMLTableCellElement;
@@ -889,32 +850,6 @@ export class WysiwygEditorComponent implements OnInit, AfterViewInit, AfterViewC
     }
   };
 
-  applyBorderStyle() {
-    if (!this.borderTarget) return;
-    this.borderTarget.style.border = `${this.borderWidth}px ${this.borderStyle} ${this.borderColor}`;
-    if (this.borderTarget.tagName === 'TABLE') {
-      // Optionally apply to all cells
-      const cells = this.borderTarget.querySelectorAll('td, th');
-      cells.forEach((cell: any) => {
-        cell.style.border = `${this.borderWidth}px ${this.borderStyle} ${this.borderColor}`;
-      });
-    }
-    this.updateHtml();
-  }
-
-  closeBorderToolbar() {
-    this.showTableBorderToolbar = false;
-    this.borderTarget = null;
-    // Restore selection and focus editor
-    if (this.savedTableRange && this.editor && this.editor.nativeElement) {
-      const sel = window.getSelection();
-      sel?.removeAllRanges();
-      sel?.addRange(this.savedTableRange);
-      this.editor.nativeElement.focus();
-    }
-    this.savedTableRange = null;
-  }
-
   applyCellStyles() {
     if (!this.selectedCell) return;
     this.selectedCell.style.backgroundColor = this.cellBgColor;
@@ -925,7 +860,7 @@ export class WysiwygEditorComponent implements OnInit, AfterViewInit, AfterViewC
   }
 
   closeCellStyleSidebar() {
-    console.log('closeCellStyleSidebar called', this.showCellStyleSidebar);
+    console.log('closeCellStyleSidebar called', this.showCellStyleIcon);
     this.hideCellStyleUI();
   }
 
@@ -937,7 +872,6 @@ export class WysiwygEditorComponent implements OnInit, AfterViewInit, AfterViewC
   }
 
   hideCellStyleUI() {
-    this.showCellStyleSidebar = false;
     this.showCellStyleIcon = false;
     this.selectedCell = null;
   }
@@ -1108,5 +1042,93 @@ export class WysiwygEditorComponent implements OnInit, AfterViewInit, AfterViewC
     }
     this.styleTarget = null;
     this.selectedRow = null;
+  }
+
+  onEditorContextMenu = (event: MouseEvent) => {
+    event.preventDefault();
+    let target = event.target as HTMLElement;
+    // If the target is the editor itself or not an element, wrap selection in a span
+    if (target === this.editor.nativeElement || target.nodeType !== Node.ELEMENT_NODE) {
+      const sel = window.getSelection();
+      if (sel && sel.rangeCount > 0 && !sel.isCollapsed && this.editor.nativeElement.contains(sel.anchorNode)) {
+        const range = sel.getRangeAt(0);
+        const span = document.createElement('span');
+        range.surroundContents(span);
+        target = span;
+        // Move selection to the new span
+        sel.removeAllRanges();
+        const newRange = document.createRange();
+        newRange.selectNodeContents(span);
+        sel.addRange(newRange);
+        this.updateHtml();
+      } else {
+        // If no selection, do nothing
+        return;
+      }
+    }
+    this.thymeleafMenuPosition = { x: event.clientX, y: event.clientY };
+    this.thymeleafTargetElement = target;
+    this.showThymeleafMenu = true;
+    this.showThymeleafAttrDialog = false;
+  };
+
+  onThymeleafMenuClose() {
+    this.showThymeleafMenu = false;
+    this.showThymeleafAttrDialog = false;
+  }
+
+  // Save selection before opening Thymeleaf dialog/menu
+  onThymeleafOpenDialog(attr: string) {
+    // Save the current selection
+    const sel = window.getSelection();
+    if (sel && sel.rangeCount > 0) {
+      this.savedRange = sel.getRangeAt(0).cloneRange();
+      console.log('[onThymeleafOpenDialog] Saved selection range');
+    }
+    this.showThymeleafAttrDialog = true;
+    if (this.thymeleafTargetElement) {
+      // Optionally, pre-fill dialog values based on the element
+    }
+  }
+
+  onThymeleafCloseDialog() {
+    this.showThymeleafAttrDialog = false;
+  }
+
+  onThymeleafAttributeChange(event: { attr: string, value: string | null }) {
+    if (this.thymeleafTargetElement && event.attr) {
+      if (event.value === null) {
+        this.thymeleafTargetElement.removeAttribute(event.attr);
+        // Remove thymeleaf-var class if no more th:text or th:utext
+        if (!this.thymeleafTargetElement.hasAttribute('th:text') && !this.thymeleafTargetElement.hasAttribute('th:utext')) {
+          this.thymeleafTargetElement.classList.remove('thymeleaf-var');
+        }
+      } else {
+        this.thymeleafTargetElement.setAttribute(event.attr, event.value);
+        // Add thymeleaf-var class for th:text or th:utext
+        if (event.attr === 'th:text' || event.attr === 'th:utext') {
+          this.thymeleafTargetElement.classList.add('thymeleaf-var');
+        }
+      }
+    }
+    this.showThymeleafAttrDialog = false;
+    this.showThymeleafMenu = false;
+    this.updateHtml();
+  }
+
+  onInsertHtml(html: string) {
+    // Restore the saved selection before inserting
+    if (this.savedRange) {
+      const sel = window.getSelection();
+      sel?.removeAllRanges();
+      sel?.addRange(this.savedRange);
+      console.log('[onInsertHtml] Restored saved selection range');
+      this.savedRange = null;
+    }
+    console.log('[onInsertHtml] Inserting HTML:', html);
+    this.insertHtmlAtCursor(html);
+    this.updateHtml();
+    this.showThymeleafAttrDialog = false;
+    this.showThymeleafMenu = false;
   }
 }

@@ -9,7 +9,7 @@
         <input type="color" [(ngModel)]="borderColor" (ngModelChange)="onBorderColorChange($event)" />
       </label>
       <label>Width:
-        <input type="number" min="1" max="10" [(ngModel)]="borderWidth" (ngModelChange)="onBorderWidthChange($event)" style="width:40px;" /> px
+        <input type="number" min="1" max="10" [(ngModel)]="borderWidth" (ngModelChange)="onBorderWidthChange($event)" class="input-width-small" /> px
       </label>
       <label>Style:
         <select [(ngModel)]="borderStyle" (ngModelChange)="onBorderStyleChange($event)">
