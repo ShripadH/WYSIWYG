@@ -119,12 +119,6 @@ export class ThymeleafRenderService {
         el.setAttribute('href', this.evalExpr(expr, data));
         el.removeAttribute('th:href');
       }
-      // th:src
-      if (el.hasAttribute('th:src')) {
-        const expr = el.getAttribute('th:src')!;
-        el.setAttribute('src', this.evalExpr(expr, data));
-        el.removeAttribute('th:src');
-      }
       // th:style
       if (el.hasAttribute('th:style')) {
         const expr = el.getAttribute('th:style')!;

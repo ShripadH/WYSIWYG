@@ -19,6 +19,13 @@ export class TableStylePopupComponent {
   @Input() cellAlign: string = 'left';
   @Input() cellVAlign: string = 'top';
 
+  @Input() topBorderColor: string = '#000000';
+  @Input() topBorderWidth: number = 1;
+  @Input() topBorderStyle: string = 'solid';
+  @Input() bottomBorderColor: string = '#000000';
+  @Input() bottomBorderWidth: number = 1;
+  @Input() bottomBorderStyle: string = 'solid';
+
   @Input() styleType: 'table' | 'row' | 'cell' = 'cell';
   @Input() target: HTMLElement | null = null;
   @Output() applyStyle = new EventEmitter<{ type: 'table' | 'row' | 'cell', styles: any }>();
@@ -38,8 +45,14 @@ export class TableStylePopupComponent {
     if (this.styleType === 'table') {
       styles = { borderColor: this.borderColor, borderWidth: this.borderWidth, borderStyle: this.borderStyle };
     } else if (this.styleType === 'row') {
-      // Add row style fields as needed
-      styles = {};
+      styles = {
+        topBorderColor: this.topBorderColor,
+        topBorderWidth: this.topBorderWidth,
+        topBorderStyle: this.topBorderStyle,
+        bottomBorderColor: this.bottomBorderColor,
+        bottomBorderWidth: this.bottomBorderWidth,
+        bottomBorderStyle: this.bottomBorderStyle
+      };
     } else if (this.styleType === 'cell') {
       styles = { bgColor: this.cellBgColor, align: this.cellAlign, vAlign: this.cellVAlign };
     }

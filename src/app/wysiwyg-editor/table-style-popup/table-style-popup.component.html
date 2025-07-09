@@ -27,8 +27,44 @@
     </div>
 
     <div *ngIf="styleType === 'row'">
-      <!-- Add row style controls here -->
-      <p>Row style controls (to be implemented)...</p>
+      <label>Top Border Color:
+        <input type="color" [(ngModel)]="topBorderColor" />
+      </label>
+      <label>Top Border Width:
+        <input type="number" min="0" max="10" [(ngModel)]="topBorderWidth" class="input-width-small" /> px
+      </label>
+      <label>Top Border Style:
+        <select [(ngModel)]="topBorderStyle">
+          <option value="solid">Solid</option>
+          <option value="dashed">Dashed</option>
+          <option value="dotted">Dotted</option>
+          <option value="double">Double</option>
+          <option value="groove">Groove</option>
+          <option value="ridge">Ridge</option>
+          <option value="inset">Inset</option>
+          <option value="outset">Outset</option>
+          <option value="none">None</option>
+        </select>
+      </label>
+      <label>Bottom Border Color:
+        <input type="color" [(ngModel)]="bottomBorderColor" />
+      </label>
+      <label>Bottom Border Width:
+        <input type="number" min="0" max="10" [(ngModel)]="bottomBorderWidth" class="input-width-small" /> px
+      </label>
+      <label>Bottom Border Style:
+        <select [(ngModel)]="bottomBorderStyle">
+          <option value="solid">Solid</option>
+          <option value="dashed">Dashed</option>
+          <option value="dotted">Dotted</option>
+          <option value="double">Double</option>
+          <option value="groove">Groove</option>
+          <option value="ridge">Ridge</option>
+          <option value="inset">Inset</option>
+          <option value="outset">Outset</option>
+          <option value="none">None</option>
+        </select>
+      </label>
     </div>
 
     <div *ngIf="styleType === 'cell'">

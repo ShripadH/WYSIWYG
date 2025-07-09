@@ -39,7 +39,46 @@ export class TableService {
     editor.focus();
   }
 
-  insertTable(rows: number, cols: number, editor: HTMLElement): void {
+  insertTable(rows: number, cols: number, parent: HTMLElement) {
+    // Only insert if the selection/cursor is inside the parent (editor)
+    const sel = window.getSelection();
+    let isInside = false;
+    if (sel && sel.rangeCount > 0) {
+      const anchorNode = sel.anchorNode;
+      const focusNode = sel.focusNode;
+      if (
+        (anchorNode && parent.contains(anchorNode)) ||
+        (focusNode && parent.contains(focusNode))
+      ) {
+        isInside = true;
+      }
+    }
+    if (!isInside) {
+      // Move cursor to end of editor
+      if (sel) {
+        sel.removeAllRanges();
+        const newRange = document.createRange();
+        newRange.selectNodeContents(parent);
+        newRange.collapse(false); // to end
+        sel.addRange(newRange);
+      }
+      // Re-check if selection is now inside
+      isInside = false;
+      if (sel && sel.rangeCount > 0) {
+        const anchorNode = sel.anchorNode;
+        const focusNode = sel.focusNode;
+        if (
+          (anchorNode && parent.contains(anchorNode)) ||
+          (focusNode && parent.contains(focusNode))
+        ) {
+          isInside = true;
+        }
+      }
+      if (!isInside) {
+        alert('Please click inside the editor before inserting a table.');
+        return;
+      }
+    }
     // Add colgroup with equal width cols
     let colgroup = '<colgroup>';
     const colWidth = (100 / cols).toFixed(2) + '%';
@@ -57,7 +96,6 @@ export class TableService {
     }
     table += '</table><br>';
     // Insert at cursor
-    const sel = window.getSelection();
     if (sel && sel.rangeCount) {
       const range = sel.getRangeAt(0);
       range.deleteContents();

@@ -303,8 +303,8 @@ table th, table td {
   border: 1.5px solid #3b6cff;
   border-radius: 50%;
   box-shadow: 0 2px 8px rgba(59,108,255,0.08);
-  width: 32px;
-  height: 32px;
+  width: 22px;
+  height: 22px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -317,6 +317,8 @@ table th, table td {
 }
 .cell-style-icon svg {
   display: block;
+  width: 16px;
+  height: 16px;
 }
 
 .thymeleaf-loop-table {
@@ -336,6 +338,36 @@ table th, table td {
   padding: 2px 8px;
   border-radius: 4px 4px 0 0;
   z-index: 10;
+}
+
+.thymeleaf-each-edit-handle {
+  position: absolute;
+  z-index: 1001;
+  background: #fffbe6;
+  border: 1.5px solid #f59e42;
+  border-radius: 50%;
+  box-shadow: 0 2px 8px rgba(245, 158, 66, 0.12);
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: box-shadow 0.15s, border 0.15s;
+}
+.thymeleaf-each-edit-handle:hover {
+  box-shadow: 0 4px 16px rgba(245, 158, 66, 0.22);
+  border-color: #e67c00;
+  background: #fff3d1;
+}
+
+/* DEBUG: Force edit handle to be visible and clickable */
+.thymeleaf-each-edit-handle {
+  z-index: 9999 !important;
+  pointer-events: auto !important;
+  top: 0px !important;
+  left: 0px !important;
+  border: 2px solid red !important;
 }
 
 .row-style-handle {

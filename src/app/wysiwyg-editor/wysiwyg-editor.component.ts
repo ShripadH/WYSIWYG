@@ -1,4 +1,4 @@
-import { Component, ViewChild, ElementRef, Output, EventEmitter, AfterViewInit, AfterViewChecked, OnDestroy, OnInit, Renderer2 } from '@angular/core';
+import { Component, ViewChild, ElementRef, Output, EventEmitter, AfterViewInit, AfterViewChecked, OnDestroy, OnInit, Renderer2, ChangeDetectorRef, NgZone } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { EditorDomService } from './editor-dom.service';
@@ -19,6 +19,7 @@ import { ThymeleafRenderService } from './thymeleaf-render.service';
 })
 export class WysiwygEditorComponent implements OnInit, AfterViewInit, AfterViewChecked, OnDestroy {
   @ViewChild('editor', { static: false }) editor!: ElementRef<HTMLDivElement>;
+  @ViewChild('wysiwygWrapper', { static: false }) wysiwygWrapper!: ElementRef<HTMLDivElement>;
   @ViewChild('imageInput', { static: false }) imageInput!: ElementRef<HTMLInputElement>;
   @ViewChild('previewTable', { static: false }) previewTable?: ElementRef<HTMLTableElement>;
 
@@ -57,7 +58,7 @@ export class WysiwygEditorComponent implements OnInit, AfterViewInit, AfterViewC
     'th:text', 'th:utext', 'th:if', 'th:unless', 'th:each', 'th:replace', 'th:include', 'th:with', 'th:attr'
   ];
   private savedRange: Range | null = null;
-  jsonPayload = '{\n  "title": "Dynamic Title",\n  "message": "This is a message from JSON!"\n}';
+  jsonPayload = '{\n  "title": "Dynamic Title",\n  "message": "This is a message from JSON!",\n  "users": [\n    { "id": 1, "name": "Alice Smith", "address": "123 Main St" },\n    { "id": 2, "name": "Bob Johnson", "address": "456 Oak Ave" },\n    { "id": 3, "name": "Charlie Brown", "address": "789 Pine Rd" }\n  ],\n  "user": {\n    "id": 101,\n    "name": "Shripad"\n  }\n}';
   previewHtml = '';
   private resizingCol = false;
   private resizeColIndex: number | null = null;
@@ -100,6 +101,12 @@ export class WysiwygEditorComponent implements OnInit, AfterViewInit, AfterViewC
   showThymeleafMenu = false;
   showThymeleafAttrDialog = false;
   thymeleafTargetElement: HTMLElement | null = null;
+  // Add state for the th:each edit handle
+  showThymeleafEachHandle: boolean = false;
+  thymeleafEachHandleTop: number = 0;
+  thymeleafEachHandleLeft: number = 0;
+  thymeleafEachHandleTarget: HTMLElement | null = null;
+  thymeleafHandles: Array<{ table: HTMLElement, top: number, left: number }> = [];
 
   constructor(
     private editorDom: EditorDomService,
@@ -107,13 +114,18 @@ export class WysiwygEditorComponent implements OnInit, AfterViewInit, AfterViewC
     private imageService: ImageService,
     private http: HttpClient,
     private renderer: Renderer2,
-    private thymeleafRender: ThymeleafRenderService
-  ) {}
+    private thymeleafRender: ThymeleafRenderService,
+    private cdr: ChangeDetectorRef,
+    private ngZone: NgZone
+  ) {
+    console.log('WysiwygEditorComponent constructed');
+  }
 
   ngOnInit() {
   }
 
   ngAfterViewInit() {
+    console.log('ngAfterViewInit called');
     this.editorReady = true;
     this.attachEditorFocusHandlers();
     if (this.editor && this.editor.nativeElement) {
@@ -128,6 +140,12 @@ export class WysiwygEditorComponent implements OnInit, AfterViewInit, AfterViewC
       // Focus the editor by default
       this.editor.nativeElement.focus();
     }
+    if (this.wysiwygWrapper && this.wysiwygWrapper.nativeElement) {
+      this.wysiwygWrapper.nativeElement.addEventListener('mouseover', this.onEditorMouseOver, true);
+      this.wysiwygWrapper.nativeElement.addEventListener('mouseout', this.onEditorMouseOut, true);
+    }
+    // Initial handle update
+    this.updateThymeleafHandles();
   }
 
   ngAfterViewChecked() {
@@ -172,6 +190,8 @@ export class WysiwygEditorComponent implements OnInit, AfterViewInit, AfterViewC
         this.lastRenderedTableHtml = this.mergeResult;
       }
     }
+    // Update handle positions after every view check (DOM might have changed)
+    this.updateThymeleafHandles();
   }
 
   ngOnDestroy() {
@@ -239,11 +259,21 @@ export class WysiwygEditorComponent implements OnInit, AfterViewInit, AfterViewC
     const rawHtml = `<html><body>${bodyContent}</body></html>`;
     this.html = this.formatHtml(rawHtml);
     this.htmlChange.emit(this.html);
-    // Log the updated html state
-    console.log('[updateHtml] Updated html state:', this.html);
     // Re-attach event listeners after content update
     this.attachEditorFocusHandlers();
     this.editor.nativeElement.addEventListener('click', this.onTableCellClick, true);
+    // Hide floating handles if their targets no longer exist
+    if (this.selectedTable && !this.editor.nativeElement.contains(this.selectedTable)) {
+      this.selectedTable = null;
+      this.styleTarget = null;
+    }
+    if (this.selectedRowForHandle && !this.editor.nativeElement.contains(this.selectedRowForHandle)) {
+      this.selectedRowForHandle = null;
+    }
+    if (this.selectedCell && !this.editor.nativeElement.contains(this.selectedCell)) {
+      this.selectedCell = null;
+      this.showCellStyleIcon = false;
+    }
   }
 
   private formatHtml(html: string): string {
@@ -320,20 +350,34 @@ export class WysiwygEditorComponent implements OnInit, AfterViewInit, AfterViewC
 
   insertTable() {
     if (!this.editor || !this.editor.nativeElement) return;
-    const rows = parseInt(prompt('Number of rows?', '2') || '2', 10);
-    const cols = parseInt(prompt('Number of columns?', '2') || '2', 10);
-    if (isNaN(rows) || isNaN(cols) || rows < 1 || cols < 1) return;
-    this.tableService.insertTable(rows, cols, this.editor.nativeElement);
+    this.tableService.insertTable(this.tableGridRows, this.tableGridCols, this.editor.nativeElement);
     this.updateHtml();
     this.injectTableResizeHandles();
   }
 
   insertHtmlAtCursor(html: string) {
     let sel, range;
+    let insertedNodes: Node[] = [];
     if (window.getSelection) {
       sel = window.getSelection();
       if (sel && sel.getRangeAt && sel.rangeCount) {
         range = sel.getRangeAt(0);
+        // Ensure the selection is inside the editor
+        if (!this.editor.nativeElement.contains(range.startContainer)) {
+          // Focus the editor and move cursor to the end
+          this.editor.nativeElement.focus();
+          sel.removeAllRanges();
+          const newRange = document.createRange();
+          newRange.selectNodeContents(this.editor.nativeElement);
+          newRange.collapse(false); // to end
+          sel.addRange(newRange);
+          range = sel.getRangeAt(0);
+        }
+        // STRICT: If still not inside editor, abort
+        if (!this.editor.nativeElement.contains(range.startContainer)) {
+          alert('Please click inside the editor before inserting content.');
+          return;
+        }
         range.deleteContents();
         const el = document.createElement('div');
         el.innerHTML = html;
@@ -341,6 +385,7 @@ export class WysiwygEditorComponent implements OnInit, AfterViewInit, AfterViewC
         let node, lastNode;
         while ((node = el.firstChild)) {
           lastNode = frag.appendChild(node);
+          insertedNodes.push(lastNode);
         }
         range.insertNode(frag);
         // Move the cursor after the inserted table
@@ -350,11 +395,30 @@ export class WysiwygEditorComponent implements OnInit, AfterViewInit, AfterViewC
           sel.removeAllRanges();
           sel.addRange(range);
         }
+        // Clean up empty divs before and after the inserted block
+        insertedNodes.forEach(n => {
+          if (n.nodeType === 1 && (n as HTMLElement).tagName === 'DIV') {
+            this.cleanUpEmptyDivsAround(n as HTMLElement);
+          }
+        });
         // Log the editor DOM after insertion
         if (this.editor && this.editor.nativeElement) {
           console.log('[insertHtmlAtCursor] Editor innerHTML after insertion:', this.editor.nativeElement.innerHTML);
         }
       }
+    }
+  }
+
+  private cleanUpEmptyDivsAround(element: HTMLElement) {
+    // Remove empty previous sibling
+    let prev = element.previousElementSibling;
+    if (prev && prev.tagName === 'DIV' && prev.innerHTML.trim() === '') {
+      prev.parentElement?.removeChild(prev);
+    }
+    // Remove empty next sibling
+    let next = element.nextElementSibling;
+    if (next && next.tagName === 'DIV' && next.innerHTML.trim() === '') {
+      next.parentElement?.removeChild(next);
     }
   }
 
@@ -575,6 +639,8 @@ export class WysiwygEditorComponent implements OnInit, AfterViewInit, AfterViewC
     this.thymeleafAttr = this.thymeleafAttrOptions[0];
     this.thymeleafVar = '';
     this.showThymeleafDialog = true;
+    this.showThymeleafAttrDialog = false;
+    this.showThymeleafMenu = false;
   }
 
   confirmThymeleafDialog() {
@@ -605,7 +671,7 @@ export class WysiwygEditorComponent implements OnInit, AfterViewInit, AfterViewC
         });
         tableHtml += '</tr>';
       }
-      tableHtml += '<tr th:each="' + variable + ': ${' + collection + '}">';
+      tableHtml += '<tr th:each="' + variable + ': ${' + collection + '11}">';
       fields.forEach(field => {
         tableHtml += '<td th:text="${' + variable + '.' + field + '}">' + variable + '.' + field + '</td>';
       });
@@ -666,7 +732,6 @@ export class WysiwygEditorComponent implements OnInit, AfterViewInit, AfterViewC
       const firstRow = table.rows[0];
       if (firstRow) {
         Array.from(firstRow.cells).forEach((cell: any, i: number) => {
-          console.log('Header row cell', cell, 'index', i);
           const oldHandle = cell.querySelector('.col-resize-handle');
           if (oldHandle) oldHandle.remove();
           if (i < firstRow.cells.length - 1) {
@@ -691,7 +756,6 @@ export class WysiwygEditorComponent implements OnInit, AfterViewInit, AfterViewC
       const firstDataRow = Array.from(table.rows).find((row: any) => Array.from((row as HTMLTableRowElement).cells).some((cell: any) => cell.tagName === 'TD')) as HTMLTableRowElement | undefined;
       if (firstDataRow && firstDataRow !== firstRow) {
         Array.from(firstDataRow.cells).forEach((cell: any, i: number) => {
-          console.log('Data row cell', cell, 'index', i);
           const oldHandle = cell.querySelector('.col-resize-handle');
           if (oldHandle) oldHandle.remove();
           if (i < firstDataRow.cells.length - 1) {
@@ -720,7 +784,6 @@ export class WysiwygEditorComponent implements OnInit, AfterViewInit, AfterViewC
   startColResize(e: MouseEvent, table: HTMLTableElement, colIndex: number) {
     e.preventDefault();
     e.stopPropagation();
-    console.log('startColResize', { colIndex, table });
     this.resizingCol = true;
     this.resizeColIndex = colIndex;
     this.currentTable = table;
@@ -760,7 +823,6 @@ export class WysiwygEditorComponent implements OnInit, AfterViewInit, AfterViewC
     if (!this.resizingCol || this.resizeColIndex === null || !this.currentTable) return;
     const dx = e.clientX - this.startColX;
     const firstRow = this.currentTable.rows[0];
-    console.log('onColResizeMove', { dx, colIndex: this.resizeColIndex });
     if (firstRow && this.resizeColIndex !== null && firstRow.cells[this.resizeColIndex]) {
       // Get table width
       const tableWidth = this.currentTable.offsetWidth;
@@ -797,7 +859,6 @@ export class WysiwygEditorComponent implements OnInit, AfterViewInit, AfterViewC
 
   // --- Border Customization ---
   onTableCellClick = (e: MouseEvent) => {
-    console.log('cell click', e.target);
     const target = e.target as HTMLElement;
     if (target.tagName === 'TABLE' || target.tagName === 'TD' || target.tagName === 'TH') {
       // Always anchor to the table element
@@ -806,8 +867,8 @@ export class WysiwygEditorComponent implements OnInit, AfterViewInit, AfterViewC
       if (tableElem) {
         this.selectedTable = tableElem;
         const rect = tableElem.getBoundingClientRect();
-        this.tableIconTop = rect.top + window.scrollY - 12;
-        this.tableIconLeft = rect.left + window.scrollX - 12;
+        this.tableIconTop = rect.top + window.scrollY - 20;
+        this.tableIconLeft = rect.left + window.scrollX -24;
 
         // Gather row refs and positions
         this.rowRefs = Array.from(tableElem.querySelectorAll('tr'));
@@ -831,8 +892,8 @@ export class WysiwygEditorComponent implements OnInit, AfterViewInit, AfterViewC
       this.selectedCell = target as HTMLTableCellElement;
       const rect = this.selectedCell.getBoundingClientRect();
       const editorRect = this.editor.nativeElement.getBoundingClientRect();
-      this.cellStyleIconTop = rect.top - editorRect.top + 24;
-      this.cellStyleIconLeft = rect.left - editorRect.left + rect.width - 3;
+      this.cellStyleIconTop = rect.top - editorRect.top + 37;
+      this.cellStyleIconLeft = rect.left - editorRect.left + rect.width +10;
       this.showCellStyleIcon = true;
       this.cellBgColor = this.selectedCell.style.backgroundColor || '#ffffff';
       this.cellAlign = this.selectedCell.style.textAlign || 'left';
@@ -1032,8 +1093,19 @@ export class WysiwygEditorComponent implements OnInit, AfterViewInit, AfterViewC
         });
       }
     } else if (event.type === 'row') {
-      // Add row style application logic here
-      // Example: this.styleTarget.ref.style.backgroundColor = event.styles.bgColor;
+      // Apply top and bottom border styles to each cell in the row
+      const { topBorderColor, topBorderWidth, topBorderStyle, bottomBorderColor, bottomBorderWidth, bottomBorderStyle } = event.styles;
+      const cells = this.styleTarget.ref.querySelectorAll('td, th');
+      if (topBorderWidth !== undefined && topBorderStyle && topBorderColor) {
+        cells.forEach((cell) => {
+          (cell as HTMLElement).style.borderTop = `${topBorderWidth}px ${topBorderStyle} ${topBorderColor}`;
+        });
+      }
+      if (bottomBorderWidth !== undefined && bottomBorderStyle && bottomBorderColor) {
+        cells.forEach((cell) => {
+          (cell as HTMLElement).style.borderBottom = `${bottomBorderWidth}px ${bottomBorderStyle} ${bottomBorderColor}`;
+        });
+      }
     } else if (event.type === 'cell') {
       const { bgColor, align, vAlign } = event.styles;
       this.styleTarget.ref.style.backgroundColor = bgColor;
@@ -1053,7 +1125,11 @@ export class WysiwygEditorComponent implements OnInit, AfterViewInit, AfterViewC
       if (sel && sel.rangeCount > 0 && !sel.isCollapsed && this.editor.nativeElement.contains(sel.anchorNode)) {
         const range = sel.getRangeAt(0);
         const span = document.createElement('span');
-        range.surroundContents(span);
+        // SAFER: clone contents, append, delete, insert
+        const frag = range.cloneContents();
+        span.appendChild(frag);
+        range.deleteContents();
+        range.insertNode(span);
         target = span;
         // Move selection to the new span
         sel.removeAllRanges();
@@ -1066,10 +1142,12 @@ export class WysiwygEditorComponent implements OnInit, AfterViewInit, AfterViewC
         return;
       }
     }
+    // Always close all dialogs before opening the menu
+    this.showThymeleafDialog = false;
+    this.showThymeleafAttrDialog = false;
+    this.showThymeleafMenu = true;
     this.thymeleafMenuPosition = { x: event.clientX, y: event.clientY };
     this.thymeleafTargetElement = target;
-    this.showThymeleafMenu = true;
-    this.showThymeleafAttrDialog = false;
   };
 
   onThymeleafMenuClose() {
@@ -1085,9 +1163,17 @@ export class WysiwygEditorComponent implements OnInit, AfterViewInit, AfterViewC
       this.savedRange = sel.getRangeAt(0).cloneRange();
       console.log('[onThymeleafOpenDialog] Saved selection range');
     }
-    this.showThymeleafAttrDialog = true;
+    // Always close all dialogs before opening a new one
+    this.showThymeleafDialog = false;
+    this.showThymeleafAttrDialog = false;
+    this.showThymeleafMenu = false;
+    if (attr === 'th:text' || attr === 'th:utext') {
+      this.showThymeleafDialog = true;
+    } else {
+      this.showThymeleafAttrDialog = true;
+    }
     if (this.thymeleafTargetElement) {
-      // Optionally, pre-fill dialog values based on the element
+      // Optionally, pre-fill dialog fields here
     }
   }
 
@@ -1116,19 +1202,194 @@ export class WysiwygEditorComponent implements OnInit, AfterViewInit, AfterViewC
     this.updateHtml();
   }
 
+  // Call updateThymeleafHandles after any DOM change that could affect tables
   onInsertHtml(html: string) {
     // Restore the saved selection before inserting
     if (this.savedRange) {
       const sel = window.getSelection();
       sel?.removeAllRanges();
       sel?.addRange(this.savedRange);
-      console.log('[onInsertHtml] Restored saved selection range');
       this.savedRange = null;
     }
-    console.log('[onInsertHtml] Inserting HTML:', html);
     this.insertHtmlAtCursor(html);
     this.updateHtml();
+    this.injectTableResizeHandles();
     this.showThymeleafAttrDialog = false;
     this.showThymeleafMenu = false;
+    this.updateThymeleafHandles();
+  }
+
+  // Mouseover handler to show the edit handle for th:each tables
+  onEditorMouseOver = (event: MouseEvent) => {
+    let target = event.target as HTMLElement;
+    // Find the closest th:each table from the event target
+    let table = target.closest('table');
+    while (table && !table.hasAttribute('th:each') && table.parentElement) {
+      table = table.parentElement.closest('table');
+    }
+    if (table && table.hasAttribute('th:each')) {
+      const rect = table.getBoundingClientRect();
+      const wrapperRect = this.wysiwygWrapper.nativeElement.getBoundingClientRect();
+      this.thymeleafEachHandleTop = rect.top - wrapperRect.top - 28; // above table
+      this.thymeleafEachHandleLeft = rect.left - wrapperRect.left + 8; // left edge
+      this.showThymeleafEachHandle = true;
+      this.thymeleafEachHandleTarget = table as HTMLElement;
+    }
+  };
+
+  // Mouseout handler to hide the edit handle only if leaving both table and handle
+  onEditorMouseOut = (event: MouseEvent) => {
+    const related = event.relatedTarget as HTMLElement;
+    // If moving to another part of the same table or the handle, do not hide
+    if (related) {
+      // If still inside the same th:each table, keep handle
+      let table = related.closest('table');
+      while (table && !table.hasAttribute('th:each') && table.parentElement) {
+        table = table.parentElement.closest('table');
+      }
+      if (table && this.thymeleafEachHandleTarget && table === this.thymeleafEachHandleTarget) {
+        return;
+      }
+      // If moving to the handle itself, keep handle
+      if (related.classList && related.classList.contains('thymeleaf-each-edit-handle')) {
+        return;
+      }
+    }
+    this.showThymeleafEachHandle = false;
+    this.thymeleafEachHandleTarget = null;
+  };
+
+  // Handler for clicking the edit handle
+  onThymeleafEachEditHandleClick() {
+    if (this.thymeleafEachHandleTarget) {
+      this.thymeleafMenuPosition = {
+        x: this.thymeleafEachHandleLeft + 32,
+        y: this.thymeleafEachHandleTop + 32
+      };
+      this.thymeleafTargetElement = this.thymeleafEachHandleTarget;
+      // Pre-fill dialog with current th:each values
+      const attr = 'th:each';
+      const val = this.thymeleafEachHandleTarget.getAttribute(attr) || '';
+      // Parse th:each value (e.g., student : ${students})
+      const match = val.match(/(\w+)\s*:\s*\$\{(.+?)\}/);
+      this.thymeleafEachVar = match ? match[1] : '';
+      this.thymeleafEachCollection = match ? match[2] : '';
+      // Try to extract fields from the first row/cell
+      const firstRow = this.thymeleafEachHandleTarget.querySelector('tr');
+      let fields = '';
+      if (firstRow) {
+        const tds = firstRow.querySelectorAll('td');
+        fields = Array.from(tds).map(td => {
+          const thText = td.getAttribute('th:text') || '';
+          const fieldMatch = thText.match(/\$\{.*?\.(.*?)\}/);
+          return fieldMatch ? fieldMatch[1] : '';
+        }).filter(Boolean).join(',');
+      }
+      this.thymeleafEachFields = fields;
+      // Check for header row
+      const headerRow = this.thymeleafEachHandleTarget.querySelector('tr th');
+      this.thymeleafEachAddHeader = !!headerRow;
+      if (this.thymeleafEachAddHeader) {
+        const headerVals = Array.from(this.thymeleafEachHandleTarget.querySelectorAll('tr th')).map(th => th.textContent?.trim() || '');
+        this.thymeleafEachHeaderValues = headerVals.join(',');
+      } else {
+        this.thymeleafEachHeaderValues = '';
+      }
+      this.showThymeleafAttrDialog = true;
+      this.showThymeleafMenu = false;
+    }
+  }
+
+  onThymeleafEachEditHandleClickForTable(table: HTMLElement) {
+    console.log('[onThymeleafEachEditHandleClickForTable] called for table:', table);
+    // Find the first tr with th:each or data-th-each
+    const tr = table.querySelector('tr[th\\:each], tr[data-th-each]') as HTMLElement | null;
+    let thEachValue = '';
+    if (tr) {
+      thEachValue = tr.getAttribute('th:each') || tr.getAttribute('data-th-each') || '';
+    }
+    // Parse th:each value (e.g., student : ${students})
+    const match = thEachValue.match(/(\w+)\s*:\s*\$\{(.+?)\}/);
+    this.thymeleafEachVar = match ? match[1] : '';
+    this.thymeleafEachCollection = match ? match[2] : '';
+    // Try to extract fields from the first row/cell
+    let fields = '';
+    if (tr) {
+      const tds = tr.querySelectorAll('td');
+      fields = Array.from(tds).map(td => {
+        const thText = td.getAttribute('th:text') || '';
+        const fieldMatch = thText.match(/\$\{.*?\.(.*?)\}/);
+        return fieldMatch ? fieldMatch[1] : '';
+      }).filter(Boolean).join(',');
+    }
+    this.thymeleafEachFields = fields;
+    // Check for header row
+    const headerRow = table.querySelector('tr th');
+    this.thymeleafEachAddHeader = !!headerRow;
+    if (this.thymeleafEachAddHeader) {
+      const headerVals = Array.from(table.querySelectorAll('tr th')).map(th => th.textContent?.trim() || '');
+      this.thymeleafEachHeaderValues = headerVals.join(',');
+    } else {
+      this.thymeleafEachHeaderValues = '';
+    }
+    this.thymeleafTargetElement = table;
+    this.thymeleafMenuPosition = {
+      x: table.getBoundingClientRect().right - this.wysiwygWrapper.nativeElement.getBoundingClientRect().left - 16,
+      y: table.getBoundingClientRect().top - this.wysiwygWrapper.nativeElement.getBoundingClientRect().top - 32
+    };
+    this.showThymeleafAttrDialog = true;
+    this.showThymeleafMenu = false;
+    console.log('[onThymeleafEachEditHandleClickForTable] showThymeleafAttrDialog:', this.showThymeleafAttrDialog);
+    this.cdr.detectChanges();
+    console.log('[onThymeleafEachEditHandleClickForTable] after detectChanges');
+  }
+
+  // Save edited th:each values back to the table and cells
+  saveThymeleafEachEdit() {
+    if (!this.thymeleafTargetElement) return;
+    // Find the first tr with th:each or data-th-each
+    const tr = this.thymeleafTargetElement.querySelector('tr[th\\:each], tr[data-th-each]') as HTMLElement | null;
+    if (!tr) return;
+    // Update th:each attribute
+    tr.setAttribute('th:each', `${this.thymeleafEachVar} : \${${this.thymeleafEachCollection}}`);
+    // Update fields in cells
+    const fields = this.thymeleafEachFields.split(',').map(f => f.trim()).filter(f => f);
+    const tds = tr.querySelectorAll('td');
+    fields.forEach((field, i) => {
+      if (tds[i]) {
+        tds[i].setAttribute('th:text', `\${${this.thymeleafEachVar}.${field}}`);
+        tds[i].textContent = `${this.thymeleafEachVar}.${field}`;
+      }
+    });
+    this.updateHtml();
+    this.injectTableResizeHandles();
+    this.updateThymeleafHandles();
+    this.showThymeleafAttrDialog = false;
+    this.showThymeleafMenu = false;
+  }
+
+  updateThymeleafHandles() {
+    if (!this.editor || !this.editor.nativeElement || !this.wysiwygWrapper) {
+      this.thymeleafHandles = [];
+      return;
+    }
+    // Find all tables that contain a tr with th:each or data-th-each
+    const tables = Array.from(this.editor.nativeElement.querySelectorAll('table')).filter(table =>
+      table.querySelector('tr[th\\:each], tr[data-th-each]')
+    ) as HTMLElement[];
+    const wrapperRect = this.wysiwygWrapper.nativeElement.getBoundingClientRect();
+    this.thymeleafHandles = tables.map(table => {
+      const rect = table.getBoundingClientRect();
+      return {
+        table,
+        // Position at top-right of the table
+        top: rect.top - wrapperRect.top - 28,
+        left: rect.right - wrapperRect.left - 32 // 32px from right edge
+      };
+    });
+    // Run change detection to update the view if needed
+    this.ngZone.runOutsideAngular(() => {
+      setTimeout(() => this.cdr.detectChanges(), 0);
+    });
   }
 }

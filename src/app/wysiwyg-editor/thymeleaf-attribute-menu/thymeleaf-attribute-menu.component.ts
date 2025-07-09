@@ -22,7 +22,7 @@ export class ThymeleafAttributeMenuComponent implements OnChanges {
   @Output() insertHtml = new EventEmitter<string>();
 
   supportedAttributes = [
-    'th:text', 'th:href', 'th:src', 'th:each', 'th:if', 'th:unless', 'th:value', 'th:field', 'th:replace', 'th:include', 'th:class', 'th:classappend'
+    'th:text', 'th:href', 'th:each', 'th:if', 'th:unless', 'th:remove'
   ];
 
   selectedAttribute: string | null = null;
@@ -35,11 +35,14 @@ export class ThymeleafAttributeMenuComponent implements OnChanges {
   eachAddHeader: boolean = false;
   eachHeaderValues: string = '';
 
-  // For th:field dialog
-  fieldValue: string = '';
-
   // For th:replace/include dialog
   fragmentValue: string = '';
+
+  hrefValue: string = '';
+  hrefThText: string = '';
+  hrefAnchorText: string = '';
+
+  savedRange: Range | null = null;
 
   get presentAttributes(): string[] {
     if (!this.targetElement) return [];
@@ -59,6 +62,11 @@ export class ThymeleafAttributeMenuComponent implements OnChanges {
   }
 
   onMenuSelect(attr: string) {
+    // Save the current selection before opening the dialog
+    const sel = window.getSelection();
+    if (sel && sel.rangeCount > 0) {
+      this.savedRange = sel.getRangeAt(0).cloneRange();
+    }
     this.selectedAttribute = attr;
     if (this.targetElement) {
       if (attr === 'th:each') {
@@ -67,10 +75,6 @@ export class ThymeleafAttributeMenuComponent implements OnChanges {
         const match = val.match(/(\w+)\s*:\s*\$\{(.+?)\}/);
         this.eachVar = match ? match[1] : '';
         this.eachCollection = match ? match[2] : '';
-      } else if (attr === 'th:field') {
-        const val = this.targetElement.getAttribute(attr) || '';
-        const match = val.match(/\*\{(.+?)\}/);
-        this.fieldValue = match ? match[1] : '';
       } else if (attr === 'th:replace' || attr === 'th:include') {
         this.fragmentValue = this.targetElement.getAttribute(attr) || '';
       } else {
@@ -80,7 +84,6 @@ export class ThymeleafAttributeMenuComponent implements OnChanges {
       this.attributeValue = '';
       this.eachVar = '';
       this.eachCollection = '';
-      this.fieldValue = '';
       this.fragmentValue = '';
     }
     this.openDialog.emit(attr);
@@ -88,67 +91,178 @@ export class ThymeleafAttributeMenuComponent implements OnChanges {
 
   onDialogSubmit() {
     if (this.selectedAttribute) {
+      // Restore the saved selection before applying changes
+      if (this.savedRange) {
+        const sel = window.getSelection();
+        sel?.removeAllRanges();
+        sel?.addRange(this.savedRange);
+      }
       let value = this.attributeValue.trim();
-      if (this.selectedAttribute === 'th:each') {
-        if (this.eachVar && this.eachCollection && this.eachFields) {
-          const fields = this.eachFields.split(',').map(f => f.trim()).filter(f => f);
-          if (fields.length === 0) {
-            alert('Please specify at least one field.');
+      switch (this.selectedAttribute) {
+        case 'th:each':
+          if (this.eachVar && this.eachCollection && this.eachFields) {
+            const fields = this.eachFields.split(',').map(f => f.trim()).filter(f => f);
+            if (fields.length === 0) {
+              alert('Please specify at least one field.');
+              return;
+            }
+            let tableHtml = '<table class="thymeleaf-loop-table">';
+            if (this.eachAddHeader) {
+              const headerVals = (this.eachHeaderValues || '').split(',').map(h => h.trim());
+              tableHtml += '<tr>';
+              fields.forEach((field, i) => {
+                const header = headerVals[i] || field.charAt(0).toUpperCase() + field.slice(1);
+                tableHtml += '<th>' + header + '</th>';
+              });
+              tableHtml += '</tr>';
+            }
+            tableHtml += `<tr th:each="${this.eachVar} :\${${this.eachCollection}}">`;
+            fields.forEach(field => {
+              tableHtml += `<td th:text="\${${this.eachVar}.${field}}">${this.eachVar}.${field}</td>`;
+            });
+            tableHtml += '</tr></table>';
+            tableHtml = tableHtml.replace(/\\\$/g, '$'); // ensure $ is used
+            this.insertHtml.emit(tableHtml);
+            this.selectedAttribute = null;
+            this.attributeValue = '';
+            this.eachVar = '';
+            this.eachCollection = '';
+            this.eachFields = '';
+            this.eachAddHeader = false;
+            this.eachHeaderValues = '';
+            this.fragmentValue = '';
+            this.closeDialog.emit();
+            return;
+          } else {
+            alert('Please fill all required fields.');
             return;
           }
-          let tableHtml = '<table class="thymeleaf-loop-table">';
-          if (this.eachAddHeader) {
-            const headerVals = (this.eachHeaderValues || '').split(',').map(h => h.trim());
-            tableHtml += '<tr>';
-            fields.forEach((field, i) => {
-              const header = headerVals[i] || field.charAt(0).toUpperCase() + field.slice(1);
-              tableHtml += '<th>' + header + '</th>';
-            });
-            tableHtml += '</tr>';
-          }
-          tableHtml += `<tr th:each="${this.eachVar} : \${this.eachCollection}">`;
-          fields.forEach(field => {
-            tableHtml += `<td th:text="\${${this.eachVar}.${field}}">${this.eachVar}.${field}</td>`;
-          });
-          tableHtml += '</tr></table>';
-          tableHtml = tableHtml.replace(/\\\$/g, '$'); // ensure $ is used
-          this.insertHtml.emit(tableHtml);
+        case 'th:href':
+          // Use dialog values for href, th:text, and anchor text
+          const href = this.hrefValue || '@{/user/{id}(id=${user.id})}';
+          const thText = this.hrefThText || '${user.name}';
+          const anchorText = this.hrefAnchorText || 'Profile';
+          const anchorHtml = `<a th:href="${href}" th:text="\${${thText}}">${anchorText}</a>`;
+          this.insertHtml.emit(anchorHtml);
           this.selectedAttribute = null;
           this.attributeValue = '';
-          this.eachVar = '';
-          this.eachCollection = '';
-          this.eachFields = '';
-          this.eachAddHeader = false;
-          this.eachHeaderValues = '';
-          this.fieldValue = '';
-          this.fragmentValue = '';
+          this.hrefValue = '';
+          this.hrefThText = '';
+          this.hrefAnchorText = '';
           this.closeDialog.emit();
           return;
-        } else {
-          alert('Please fill all required fields.');
+        case 'th:remove':
+          // Wrap the entire selection in a new div with th:remove and emit the HTML
+          const thRemoveValue = this.attributeValue || 'all';
+          const selectionRemove = window.getSelection();
+          if (selectionRemove && selectionRemove.rangeCount > 0 && !selectionRemove.isCollapsed) {
+            const range = selectionRemove.getRangeAt(0);
+            const selectedContent = range.cloneContents();
+            const tempDiv = document.createElement('div');
+            tempDiv.appendChild(selectedContent);
+            const html = `<div th:remove=\"${thRemoveValue}\">${tempDiv.innerHTML}</div>`;
+            this.insertHtml.emit(html);
+            this.selectedAttribute = null;
+            this.attributeValue = '';
+            this.closeDialog.emit();
+            return;
+          }
+          // Fallback: single element or insertHtml
+          if (this.targetElement) {
+            this.targetElement.setAttribute('th:remove', thRemoveValue);
+            this.attributeChange.emit({ attr: 'th:remove', value: thRemoveValue });
+            this.selectedAttribute = null;
+            this.attributeValue = '';
+            this.closeDialog.emit();
+            return;
+          } else {
+            // Fallback: insert a span if no targetElement
+            const thRemoveHtml = `<span th:remove=\"${thRemoveValue}\">${thRemoveValue}</span>`;
+            this.insertHtml.emit(thRemoveHtml);
+            this.selectedAttribute = null;
+            this.attributeValue = '';
+            this.closeDialog.emit();
+            return;
+          }
+        case 'th:text':
+          // Insert a span with th:text using the dialog value
+          const thTextValue = this.attributeValue || 'value';
+          const thTextHtml = `<span th:text="\${'${' + thTextValue + '}'}">${thTextValue}</span>`;
+          this.insertHtml.emit(thTextHtml);
+          this.selectedAttribute = null;
+          this.attributeValue = '';
+          this.closeDialog.emit();
           return;
-        }
-      } else if (this.selectedAttribute === 'th:field') {
-        if (this.fieldValue) {
-          value = `*{${this.fieldValue}}`;
-        } else {
-          value = '';
-        }
-      } else if (this.selectedAttribute === 'th:replace' || this.selectedAttribute === 'th:include') {
-        value = this.fragmentValue.trim();
-      } else if (this.selectedAttribute === 'th:href' || this.selectedAttribute === 'th:src') {
-        // Allow @{...} or literal
-        if (value && !/^@\{.*\}$/.test(value)) {
-          value = `@{${value}}`;
-        }
-      } else if ([
-        'th:text', 'th:if', 'th:unless', 'th:value', 'th:class', 'th:classappend'
-      ].includes(this.selectedAttribute)) {
-        // Wrap as ${...} if not already and if simple variable or expression
-        if (value && !/^\$\{.*\}$/.test(value) && /^[\w.]+$/.test(value)) {
-          value = ` 4{${value}}`;
-          value = value.replace('\u00024', '$'); // ensure $ is used
-        }
+        case 'th:if':
+          // Wrap the entire selection in a new div with th:if and emit the HTML
+          const thIfValue = this.attributeValue || 'condition';
+          const thIfExpr = `\${${thIfValue}}`;
+          const selection = window.getSelection();
+          if (selection && selection.rangeCount > 0 && !selection.isCollapsed) {
+            const range = selection.getRangeAt(0);
+            const selectedContent = range.cloneContents();
+            const tempDiv = document.createElement('div');
+            tempDiv.appendChild(selectedContent);
+            const html = `<div th:if=\"${thIfExpr}\">${tempDiv.innerHTML}</div>`;
+            this.insertHtml.emit(html);
+            this.selectedAttribute = null;
+            this.attributeValue = '';
+            this.closeDialog.emit();
+            return;
+          }
+          // Fallback: single element or insertHtml
+          if (this.targetElement) {
+            this.targetElement.setAttribute('th:if', thIfExpr);
+            this.attributeChange.emit({ attr: 'th:if', value: thIfExpr });
+            this.selectedAttribute = null;
+            this.attributeValue = '';
+            this.closeDialog.emit();
+            return;
+          } else {
+            // Fallback: insert a span if no targetElement
+            const thIfHtml = `<span th:if=\"${thIfExpr}\">${thIfValue}</span>`;
+            this.insertHtml.emit(thIfHtml);
+            this.selectedAttribute = null;
+            this.attributeValue = '';
+            this.closeDialog.emit();
+            return;
+          }
+        case 'th:unless':
+          // Wrap the entire selection in a new div with th:unless and emit the HTML
+          const thUnlessValue = this.attributeValue || 'condition';
+          const thUnlessExpr = `\${${thUnlessValue}}`;
+          const selectionUnless = window.getSelection();
+          if (selectionUnless && selectionUnless.rangeCount > 0 && !selectionUnless.isCollapsed) {
+            const range = selectionUnless.getRangeAt(0);
+            const selectedContent = range.cloneContents();
+            const tempDiv = document.createElement('div');
+            tempDiv.appendChild(selectedContent);
+            const html = `<div th:unless=\"${thUnlessExpr}\">${tempDiv.innerHTML}</div>`;
+            this.insertHtml.emit(html);
+            this.selectedAttribute = null;
+            this.attributeValue = '';
+            this.closeDialog.emit();
+            return;
+          }
+          // Fallback: single element or insertHtml
+          if (this.targetElement) {
+            this.targetElement.setAttribute('th:unless', thUnlessExpr);
+            this.attributeChange.emit({ attr: 'th:unless', value: thUnlessExpr });
+            this.selectedAttribute = null;
+            this.attributeValue = '';
+            this.closeDialog.emit();
+            return;
+          } else {
+            // Fallback: insert a span if no targetElement
+            const thUnlessHtml = `<span th:unless=\"${thUnlessExpr}\">${thUnlessValue}</span>`;
+            this.insertHtml.emit(thUnlessHtml);
+            this.selectedAttribute = null;
+            this.attributeValue = '';
+            this.closeDialog.emit();
+            return;
+          }
+        default:
+          break;
       }
       this.attributeChange.emit({ attr: this.selectedAttribute, value });
       this.selectedAttribute = null;
@@ -158,8 +272,10 @@ export class ThymeleafAttributeMenuComponent implements OnChanges {
       this.eachFields = '';
       this.eachAddHeader = false;
       this.eachHeaderValues = '';
-      this.fieldValue = '';
       this.fragmentValue = '';
+      this.hrefValue = '';
+      this.hrefThText = '';
+      this.hrefAnchorText = '';
       this.closeDialog.emit();
     }
   }
@@ -167,6 +283,9 @@ export class ThymeleafAttributeMenuComponent implements OnChanges {
   onDialogCancel() {
     this.selectedAttribute = null;
     this.attributeValue = '';
+    this.hrefValue = '';
+    this.hrefThText = '';
+    this.hrefAnchorText = '';
     this.closeDialog.emit();
   }
 

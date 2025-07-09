@@ -1,5 +1,3 @@
-<p>thymeleaf-attribute-menu works!</p>
-
 <!-- Context Menu -->
 <div *ngIf="showMenu && menuPosition" class="thymeleaf-context-menu" [ngStyle]="{'top.px': menuPosition.y, 'left.px': menuPosition.x}">
   <div class="menu-title">Add/Edit Thymeleaf Attribute</div>
@@ -23,33 +21,61 @@
   <div class="thymeleaf-attr-dialog">
     <div class="dialog-title">Edit Thymeleaf Attribute</div>
     <div class="dialog-attr">Attribute: <b>{{ selectedAttribute }}</b></div>
-    <ng-container *ngIf="selectedAttribute === 'th:each'; else genericAttrDialog">
-      <div class="dialog-field">
-        <label>Variable Name:</label>
-        <input type="text" [(ngModel)]="eachVar" placeholder="e.g. student" />
+    <ng-container [ngSwitch]="selectedAttribute">
+      <div *ngSwitchCase="'th:each'">
+        <div class="dialog-field">
+          <label>Variable Name:</label>
+          <input type="text" [(ngModel)]="eachVar" placeholder="e.g. student" />
+        </div>
+        <div class="dialog-field">
+          <label>Collection Name:</label>
+          <input type="text" [(ngModel)]="eachCollection" placeholder="e.g. students" />
+        </div>
+        <div class="dialog-field">
+          <label>Fields (comma-separated):</label>
+          <input type="text" [(ngModel)]="eachFields" placeholder="e.g. id,name" />
+        </div>
+        <div class="dialog-field">
+          <label><input type="checkbox" [(ngModel)]="eachAddHeader" /> Add header row</label>
+        </div>
+        <div class="dialog-field" *ngIf="eachAddHeader">
+          <label>Header display values (comma-separated):</label>
+          <input type="text" [(ngModel)]="eachHeaderValues" placeholder="e.g. ID,Name" />
+        </div>
       </div>
-      <div class="dialog-field">
-        <label>Collection Name:</label>
-        <input type="text" [(ngModel)]="eachCollection" placeholder="e.g. students" />
+      <div *ngSwitchCase="'th:href'">
+        <div class="dialog-field">
+          <label>Href (th:href):</label>
+          <input type="text" [(ngModel)]="hrefValue" placeholder="e.g. '/user/' + ${user.id}" />
+        </div>
+        <div class="dialog-field">
+          <label>th:text: to replace Default Anchor Dynamically</label>
+          <input type="text" [(ngModel)]="hrefThText" placeholder="e.g. user.name" />
+        </div>
+        <div class="dialog-field">
+          <label>Default Anchor Text:</label>
+          <input type="text" [(ngModel)]="hrefAnchorText" placeholder="e.g. View User Profile" />
+        </div>
       </div>
-      <div class="dialog-field">
-        <label>Fields (comma-separated):</label>
-        <input type="text" [(ngModel)]="eachFields" placeholder="e.g. id,name" />
+      <div *ngSwitchCase="'th:remove'">
+        <div class="dialog-field">
+          <label>Remove Type:</label>
+          <select [(ngModel)]="attributeValue">
+            <option value="all">all</option>
+            <option value="tag">tag</option>
+            <option value="body">body</option>
+            <option value="all-but-first">all-but-first</option>
+            <option value="none">none</option>
+          </select>
+        </div>
       </div>
-      <div class="dialog-field">
-        <label><input type="checkbox" [(ngModel)]="eachAddHeader" /> Add header row</label>
-      </div>
-      <div class="dialog-field" *ngIf="eachAddHeader">
-        <label>Header display values (comma-separated):</label>
-        <input type="text" [(ngModel)]="eachHeaderValues" placeholder="e.g. ID,Name" />
+      <div *ngSwitchDefault>
+        <div class="dialog-field">
+          <label>Value:</label>
+          <input type="text" [(ngModel)]="attributeValue" placeholder="Enter value or expression..." />
+        </div>
       </div>
     </ng-container>
-    <ng-template #genericAttrDialog>
-      <div class="dialog-field">
-        <label>Value:</label>
-        <input type="text" [(ngModel)]="attributeValue" placeholder="Enter value or expression..." />
-      </div>
-    </ng-template>
     <div class="dialog-actions">
       <button (click)="onDialogSubmit()">Apply</button>
       <button (click)="onDialogCancel()">Cancel</button>

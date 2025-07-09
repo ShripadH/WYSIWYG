@@ -1,4 +1,4 @@
-<div class="wysiwyg-wrapper">
+<div class="wysiwyg-wrapper" #wysiwygWrapper>
 <div class="wysiwyg-toolbar">
   <button type="button" (click)="format('bold')" title="Bold"><b>B</b></button>
   <button type="button" (click)="format('italic')" title="Italic"><i>I</i></button>
@@ -149,6 +149,27 @@
      (click)="openCellStyleSidebar()" title="Edit Cell Style">
   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#3b6cff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
 </div>
+
+<!-- Always render edit handle for every th:each table using thymeleafHandles -->
+<!-- <ng-container *ngFor="let handle of thymeleafHandles">
+  <div class="thymeleaf-each-edit-handle"
+       [ngStyle]="{
+         top: handle.top + 'px',
+         left: handle.left + 'px',
+         position: 'absolute',
+         zIndex: 1001
+       }"
+       (click)="onThymeleafEachEditHandleClickForTable(handle.table)"
+       onclick="console.log('native click!')"
+       title="Edit Thymeleaf th:each Table">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#f59e42" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="3" y="3" width="18" height="18" rx="2"/>
+      <path d="M8 8h8v8H8z"/>
+      <path d="M12 12l4 4"/>
+      <path d="M12 12l-4 4"/>
+    </svg>
+  </div>
+</ng-container> -->
 
 <!-- Merge Template Section -->
 <div class="merge-section">
