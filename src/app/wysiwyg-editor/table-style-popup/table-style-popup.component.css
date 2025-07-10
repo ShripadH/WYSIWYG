@@ -69,4 +69,39 @@ button:hover {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  position: relative;
+}
+
+.paint-icon-btn {
+  border: none;
+  background: #eee;
+  border-radius: 4px;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  margin-left: 8px;
+  cursor: pointer;
+  vertical-align: middle;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+  transition: background 0.2s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.paint-icon-btn svg {
+  width: 26px;
+  height: 26px;
+}
+.paint-icon-btn:hover {
+  background: #e0e0e0;
+}
+.color-picker-popup-inline {
+  position: absolute;
+  z-index: 10000;
+  margin-top: 4px;
+  background: #fff;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  padding: 4px;
 }

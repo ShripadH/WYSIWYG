@@ -1,28 +1,29 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ColorPickerComponent } from '../color-picker.component';
 
 @Component({
   selector: 'app-table-style-popup',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ColorPickerComponent],
   templateUrl: './table-style-popup.component.html',
   styleUrl: './table-style-popup.component.css'
 })
 export class TableStylePopupComponent {
   // Table style
-  @Input() borderColor: string = '#000000';
+  @Input() borderColor: string = '#e0e0e0';
   @Input() borderWidth: number = 1;
   @Input() borderStyle: string = 'solid';
   // Cell style
-  @Input() cellBgColor: string = '#ffffff';
+  @Input() cellBgColor: string = '#e0e0e0';
   @Input() cellAlign: string = 'left';
   @Input() cellVAlign: string = 'top';
 
-  @Input() topBorderColor: string = '#000000';
+  @Input() topBorderColor: string = '#e0e0e0';
   @Input() topBorderWidth: number = 1;
   @Input() topBorderStyle: string = 'solid';
-  @Input() bottomBorderColor: string = '#000000';
+  @Input() bottomBorderColor: string = '#e0e0e0';
   @Input() bottomBorderWidth: number = 1;
   @Input() bottomBorderStyle: string = 'solid';
 
@@ -30,6 +31,11 @@ export class TableStylePopupComponent {
   @Input() target: HTMLElement | null = null;
   @Output() applyStyle = new EventEmitter<{ type: 'table' | 'row' | 'cell', styles: any }>();
   @Output() close = new EventEmitter<void>();
+
+  showTableBorderColorPicker = false;
+  showRowTopBorderColorPicker = false;
+  showRowBottomBorderColorPicker = false;
+  showCellBgColorPicker = false;
 
   // Table style handlers
   onBorderColorChange(value: string) { this.borderColor = value; }
@@ -39,6 +45,34 @@ export class TableStylePopupComponent {
   onCellBgColorChange(value: string) { this.cellBgColor = value; }
   onCellAlignChange(value: string) { this.cellAlign = value; }
   onCellVAlignChange(value: string) { this.cellVAlign = value; }
+
+  openTableBorderColorPicker() { this.showTableBorderColorPicker = true; }
+  closeTableBorderColorPicker() { this.showTableBorderColorPicker = false; }
+  onTableBorderColorSelected(color: string) {
+    this.onBorderColorChange(color);
+    this.closeTableBorderColorPicker();
+  }
+
+  openRowTopBorderColorPicker() { this.showRowTopBorderColorPicker = true; }
+  closeRowTopBorderColorPicker() { this.showRowTopBorderColorPicker = false; }
+  onRowTopBorderColorSelected(color: string) {
+    this.topBorderColor = color;
+    this.closeRowTopBorderColorPicker();
+  }
+
+  openRowBottomBorderColorPicker() { this.showRowBottomBorderColorPicker = true; }
+  closeRowBottomBorderColorPicker() { this.showRowBottomBorderColorPicker = false; }
+  onRowBottomBorderColorSelected(color: string) {
+    this.bottomBorderColor = color;
+    this.closeRowBottomBorderColorPicker();
+  }
+
+  openCellBgColorPicker() { this.showCellBgColorPicker = true; }
+  closeCellBgColorPicker() { this.showCellBgColorPicker = false; }
+  onCellBgColorSelected(color: string) {
+    this.onCellBgColorChange(color);
+    this.closeCellBgColorPicker();
+  }
 
   apply() {
     let styles: any = {};

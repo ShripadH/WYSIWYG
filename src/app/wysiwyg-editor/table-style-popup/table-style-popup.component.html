@@ -7,7 +7,18 @@
     <div *ngIf="styleType === 'table'" class="style-section">
       <div class="style-control">
         <label>Border Color:</label>
-        <input type="color" [(ngModel)]="borderColor" (ngModelChange)="onBorderColorChange($event)" />
+        <button type="button" class="paint-icon-btn" (click)="openTableBorderColorPicker()" [style.background]="borderColor" title="Pick border color">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <path d="M12 3C7.03 3 3 7.03 3 12c0 3.87 3.13 7 7 7h1a2 2 0 0 0 2-2c0-.55.45-1 1-1h2a3 3 0 0 0 3-3c0-4.97-4.03-9-9-9z" fill="#f4e1b1"/>
+            <circle cx="8.5" cy="10.5" r="1.5" fill="#f44336"/>
+            <circle cx="15.5" cy="10.5" r="1.5" fill="#2196f3"/>
+            <circle cx="12" cy="7.5" r="1.5" fill="#4caf50"/>
+            <circle cx="12" cy="15.5" r="1.5" fill="#ffeb3b"/>
+          </svg>
+        </button>
+        <div *ngIf="showTableBorderColorPicker" class="color-picker-popup-inline">
+          <app-color-picker (colorSelected)="onTableBorderColorSelected($event)"></app-color-picker>
+        </div>
       </div>
       <div class="style-control">
         <label>Width:</label>
@@ -32,7 +43,18 @@
     <div *ngIf="styleType === 'row'" class="style-section">
       <div class="style-control">
         <label>Top Border Color:</label>
-        <input type="color" [(ngModel)]="topBorderColor" />
+        <button type="button" class="paint-icon-btn" (click)="openRowTopBorderColorPicker()" [style.background]="topBorderColor" title="Pick top border color">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <path d="M12 3C7.03 3 3 7.03 3 12c0 3.87 3.13 7 7 7h1a2 2 0 0 0 2-2c0-.55.45-1 1-1h2a3 3 0 0 0 3-3c0-4.97-4.03-9-9-9z" fill="#f4e1b1"/>
+            <circle cx="8.5" cy="10.5" r="1.5" fill="#f44336"/>
+            <circle cx="15.5" cy="10.5" r="1.5" fill="#2196f3"/>
+            <circle cx="12" cy="7.5" r="1.5" fill="#4caf50"/>
+            <circle cx="12" cy="15.5" r="1.5" fill="#ffeb3b"/>
+          </svg>
+        </button>
+        <div *ngIf="showRowTopBorderColorPicker" class="color-picker-popup-inline">
+          <app-color-picker (colorSelected)="onRowTopBorderColorSelected($event)"></app-color-picker>
+        </div>
       </div>
       <div class="style-control">
         <label>Top Border Width:</label>
@@ -54,7 +76,18 @@
       </div>
       <div class="style-control">
         <label>Bottom Border Color:</label>
-        <input type="color" [(ngModel)]="bottomBorderColor" />
+        <button type="button" class="paint-icon-btn" (click)="openRowBottomBorderColorPicker()" [style.background]="bottomBorderColor" title="Pick bottom border color">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <path d="M12 3C7.03 3 3 7.03 3 12c0 3.87 3.13 7 7 7h1a2 2 0 0 0 2-2c0-.55.45-1 1-1h2a3 3 0 0 0 3-3c0-4.97-4.03-9-9-9z" fill="#f4e1b1"/>
+            <circle cx="8.5" cy="10.5" r="1.5" fill="#f44336"/>
+            <circle cx="15.5" cy="10.5" r="1.5" fill="#2196f3"/>
+            <circle cx="12" cy="7.5" r="1.5" fill="#4caf50"/>
+            <circle cx="12" cy="15.5" r="1.5" fill="#ffeb3b"/>
+          </svg>
+        </button>
+        <div *ngIf="showRowBottomBorderColorPicker" class="color-picker-popup-inline">
+          <app-color-picker (colorSelected)="onRowBottomBorderColorSelected($event)"></app-color-picker>
+        </div>
       </div>
       <div class="style-control">
         <label>Bottom Border Width:</label>
@@ -79,7 +112,18 @@
     <div *ngIf="styleType === 'cell'" class="style-section">
       <div class="style-control">
         <label>Background Color:</label>
-        <input type="color" [(ngModel)]="cellBgColor" (ngModelChange)="onCellBgColorChange($event)" />
+        <button type="button" class="paint-icon-btn" (click)="openCellBgColorPicker()" [style.background]="cellBgColor" title="Pick cell background color">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+            <path d="M12 3C7.03 3 3 7.03 3 12c0 3.87 3.13 7 7 7h1a2 2 0 0 0 2-2c0-.55.45-1 1-1h2a3 3 0 0 0 3-3c0-4.97-4.03-9-9-9z" fill="#f4e1b1"/>
+            <circle cx="8.5" cy="10.5" r="1.5" fill="#f44336"/>
+            <circle cx="15.5" cy="10.5" r="1.5" fill="#2196f3"/>
+            <circle cx="12" cy="7.5" r="1.5" fill="#4caf50"/>
+            <circle cx="12" cy="15.5" r="1.5" fill="#ffeb3b"/>
+          </svg>
+        </button>
+        <div *ngIf="showCellBgColorPicker" class="color-picker-popup-inline">
+          <app-color-picker (colorSelected)="onCellBgColorSelected($event)"></app-color-picker>
+        </div>
       </div>
       <div class="style-control">
         <label>Horizontal Align:</label>
