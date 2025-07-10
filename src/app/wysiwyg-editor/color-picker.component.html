@@ -1,0 +1,27 @@
+<div class="color-picker-popup">
+  <div class="color-row">
+    <button class="color-btn auto" (click)="selectColor('auto')">Automatic</button>
+  </div>
+  <div class="color-section">
+    <div *ngFor="let row of themeColors" class="color-row">
+      <button *ngFor="let color of row"
+              class="color-btn"
+              [style.background]="color"
+              (click)="selectColor(color)">
+      </button>
+    </div>
+  </div>
+  <div class="color-section">
+    <div class="color-row">
+      <button *ngFor="let color of standardColors"
+              class="color-btn"
+              [style.background]="color"
+              (click)="selectColor(color)">
+      </button>
+    </div>
+  </div>
+  <div class="color-row" style="margin-top:6px;align-items:center;">
+    <button class="color-btn more" (click)="openMoreColors()">More Colors...</button>
+    <input *ngIf="showMoreColors" type="color" [value]="moreColor" (change)="onMoreColorChange($event)" style="margin-left:8px; width:32px; height:32px; border:none; background:transparent; cursor:pointer; padding:0;" />
+  </div>
+</div> 

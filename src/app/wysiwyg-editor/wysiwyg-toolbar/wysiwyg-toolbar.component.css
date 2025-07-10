@@ -5,6 +5,7 @@
   margin-bottom: 4px;
   display: flex;
   gap: 4px;
+  position: relative;
 }
 .wysiwyg-toolbar button, .wysiwyg-toolbar select {
   background: #fff;
@@ -16,4 +17,30 @@
 }
 .wysiwyg-toolbar button:hover, .wysiwyg-toolbar select:hover {
   background: #e6e6e6;
+}
+.color-icon-btn {
+  background: #fff;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  padding: 2px 8px 0 8px;
+  cursor: pointer;
+  font-size: 16px;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  margin-right: 4px;
+  position: relative;
+}
+.color-icon-btn:hover {
+  background: #e6e6e6;
+}
+.color-picker-anchor {
+  position: relative;
+  display: inline-block;
+}
+.color-picker-popup-container {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 9999;
 } 

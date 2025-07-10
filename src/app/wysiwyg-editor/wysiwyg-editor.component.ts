@@ -177,13 +177,14 @@ export class WysiwygEditorComponent implements OnInit, AfterViewInit, AfterViewC
       }
     }
     // Update handle positions after every view check (DOM might have changed)
-    // this.updateThymeleafHandles();
-    this.thymeleafRender.updateThymeleafHandles(
-      this.editor.nativeElement,
-      this.wysiwygWrapper.nativeElement,
-      this.ngZone,
-      this.cdr
-    );
+    if (this.editor?.nativeElement && this.wysiwygWrapper?.nativeElement) {
+      this.thymeleafRender.updateThymeleafHandles(
+        this.editor.nativeElement,
+        this.wysiwygWrapper.nativeElement,
+        this.ngZone,
+        this.cdr
+      );
+    }
   }
 
   ngOnDestroy() {
@@ -536,7 +537,7 @@ export class WysiwygEditorComponent implements OnInit, AfterViewInit, AfterViewC
       // Position toolbar above the image
       const rect = target.getBoundingClientRect();
       const editorRect = this.editor.nativeElement.getBoundingClientRect();
-      this.imageToolbarTop = rect.top - editorRect.top - 40;
+      this.imageToolbarTop = rect.top - editorRect.top + 20;
       this.imageToolbarLeft = rect.left - editorRect.left;
       // Position resize handles over the image
       this.imageHandlesTop = rect.top - editorRect.top;
