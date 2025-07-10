@@ -99,6 +99,7 @@ export class WysiwygEditorComponent implements OnInit, AfterViewInit, AfterViewC
   }
 
   ngOnInit() {
+    // (reverted) No forced initialization of this.html
   }
 
   ngAfterViewInit() {

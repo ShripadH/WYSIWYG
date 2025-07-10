@@ -13,6 +13,7 @@ export class WysiwygToolbarComponent {
   @Output() insertLink = new EventEmitter<void>();
   @Output() fontFamily = new EventEmitter<string>();
   @Output() fontColor = new EventEmitter<string>();
+  @Output() toggleHtml = new EventEmitter<void>();
 
   emitFontFamily(event: Event) {
     this.fontFamily.emit((event.target as HTMLSelectElement).value);

@@ -6,6 +6,7 @@
   (insertLink)="onInsertLink()"
   (fontFamily)="onFontFamily($event)"
   (fontColor)="onFontColor($event)"
+  (toggleHtml)="toggleRawHtml()"
 ></app-wysiwyg-toolbar>
 <div *ngIf="!showRawHtml">
   <div class="wysiwyg-content" contenteditable="true" #editor (input)="onInput()"></div>
