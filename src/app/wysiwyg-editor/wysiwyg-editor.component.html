@@ -63,6 +63,10 @@
 <div *ngIf="showRawHtml" class="wysiwyg-raw-html">
   <h4>Edit Raw HTML:</h4>
   <textarea [(ngModel)]="rawHtmlInput" rows="12" class="full-width-monospace"></textarea>
+  <h4>Syntax Highlighted Preview:</h4>
+  <div class="syntax-preview">
+    <pre><code [innerHTML]="rawHtmlInput | syntaxHighlight:formatType"></code></pre>
+  </div>
   <h4>Raw HTML Output:</h4>
   <pre>{{ formattedHtmlPreview }}</pre>
 </div>
@@ -104,41 +108,41 @@
 
 <input type="file" #imageInput accept="image/*" class="hidden-input" (change)="onImageSelected($event)" />
 
-<div *ngIf="showThymeleafDialog" class="thymeleaf-dialog-backdrop">
+<div *ngIf="thymeleafRender.showThymeleafDialog" class="thymeleaf-dialog-backdrop">
   <div class="thymeleaf-dialog">
     <h4>Insert Thymeleaf Variable</h4>
     <label>Attribute:
-      <select [(ngModel)]="thymeleafAttr">
-        <option *ngFor="let attr of thymeleafAttrOptions" [value]="attr">{{attr}}</option>
+      <select [(ngModel)]="thymeleafRender.thymeleafAttr">
+        <option *ngFor="let attr of thymeleafRender.thymeleafAttrOptions" [value]="attr">{{attr}}</option>
       </select>
     </label>
     <br />
-    <ng-container *ngIf="thymeleafAttr === 'th:each'; else normalThymeleaf">
+    <ng-container *ngIf="thymeleafRender.thymeleafAttr === 'th:each'; else normalThymeleaf">
       <label>Variable Name:
-        <input [(ngModel)]="thymeleafEachVar" placeholder="e.g. student" />
+        <input [(ngModel)]="thymeleafRender.thymeleafEachVar" placeholder="e.g. student" />
       </label>
       <label>Collection Name:
-        <input [(ngModel)]="thymeleafEachCollection" placeholder="e.g. students" />
+        <input [(ngModel)]="thymeleafRender.thymeleafEachCollection" placeholder="e.g. students" />
       </label>
       <label>Fields (comma-separated):
-        <input [(ngModel)]="thymeleafEachFields" placeholder="e.g. id,name" />
+        <input [(ngModel)]="thymeleafRender.thymeleafEachFields" placeholder="e.g. id,name" />
       </label>
       <label>
-        <input type="checkbox" [(ngModel)]="thymeleafEachAddHeader" /> Add header row
+        <input type="checkbox" [(ngModel)]="thymeleafRender.thymeleafEachAddHeader" /> Add header row
       </label>
-      <label *ngIf="thymeleafEachAddHeader">
+      <label *ngIf="thymeleafRender.thymeleafEachAddHeader">
         Header display values (comma-separated):
-        <input [(ngModel)]="thymeleafEachHeaderValues" placeholder="e.g. ID,Name" />
+        <input [(ngModel)]="thymeleafRender.thymeleafEachHeaderValues" placeholder="e.g. ID,Name" />
       </label>
     </ng-container>
     <ng-template #normalThymeleaf>
       <label>Variable / Expression:
-        <input [(ngModel)]="thymeleafVar" placeholder="e.g. user.name" />
+        <input [(ngModel)]="thymeleafRender.thymeleafVar" placeholder="e.g. user.name" />
       </label>
     </ng-template>
     <br />
-    <button (click)="confirmThymeleafDialog()">Insert</button>
-    <button (click)="cancelThymeleafDialog()">Cancel</button>
+    <button (click)="thymeleafRender.confirmThymeleafDialog(editor.nativeElement, updateHtml.bind(this))">Insert</button>
+    <button (click)="thymeleafRender.cancelThymeleafDialog()">Cancel</button>
   </div>
 </div>
 
@@ -190,14 +194,14 @@
 ></app-table-style-popup>
 
 <app-thymeleaf-attribute-menu
-  [targetElement]="thymeleafTargetElement"
-  [menuPosition]="thymeleafMenuPosition"
-  [showMenu]="showThymeleafMenu"
-  [showDialog]="showThymeleafAttrDialog"
-  (attributeChange)="onThymeleafAttributeChange($event)"
-  (closeMenu)="onThymeleafMenuClose()"
-  (openDialog)="onThymeleafOpenDialog($event)"
-  (closeDialog)="onThymeleafCloseDialog()"
+  [targetElement]="thymeleafRender.thymeleafTargetElement"
+  [menuPosition]="thymeleafRender.thymeleafMenuPosition"
+  [showMenu]="thymeleafRender.showThymeleafMenu"
+  [showDialog]="thymeleafRender.showThymeleafAttrDialog"
+  (attributeChange)="thymeleafRender.onThymeleafAttributeChange($event, updateHtml.bind(this))"
+  (closeMenu)="thymeleafRender.onThymeleafMenuClose()"
+  (openDialog)="thymeleafRender.onThymeleafOpenDialog($event)"
+  (closeDialog)="thymeleafRender.onThymeleafCloseDialog()"
   (insertHtml)="onInsertHtml($event)"
 ></app-thymeleaf-attribute-menu>
 </div>

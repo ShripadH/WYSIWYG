@@ -11,3 +11,49 @@ app-root {
   min-height: 100vh;
   height: 100%;
 }
+
+/* Syntax highlighting for code formatting */
+pre {
+  background: #f5f2f0;
+  padding: 1rem;
+  border-radius: 5px;
+  overflow: auto;
+  font-family: monospace;
+  line-height: 1.4;
+}
+
+.string { color: green; }
+.number { color: darkorange; }
+.boolean { color: blue; }
+.null { color: magenta; }
+.key { color: brown; }
+
+.tag { color: darkred; }
+.attr-name { color: teal; }
+.attr-value { color: olive; }
+.comment { color: gray; font-style: italic; }
+
+
+.syntax-preview {
+  background: #f8f8f8;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  overflow-x: auto;
+}
+.syntax-preview pre {
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  font-family: 'Fira Mono', 'Consolas', 'Menlo', 'Monaco', monospace;
+  font-size: 1em;
+  white-space: pre;
+}
+.syntax-preview code {
+  background: none;
+  padding: 0;
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+}
