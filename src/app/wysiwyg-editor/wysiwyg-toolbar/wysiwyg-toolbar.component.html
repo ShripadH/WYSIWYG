@@ -32,7 +32,7 @@
     <option value="H5">H5</option>
     <option value="H6">H6</option>
   </select>
-  <select #fontSizeSelect (change)="fontSize.emit(fontSizeSelect.value)" title="Font Size">
+  <select (change)="emitFontSize($event)" title="Font Size">
     <option value="12px">12</option>
     <option value="14px">14</option>
     <option value="16px">16</option>
@@ -40,6 +40,17 @@
     <option value="24px">24</option>
     <option value="32px">32</option>
   </select>
+  <select (change)="emitFontFamily($event)" title="Font Family">
+    <option value="Arial">Arial</option>
+    <option value="Times New Roman">Times New Roman</option>
+    <option value="Courier New">Courier New</option>
+    <option value="Georgia">Georgia</option>
+    <option value="Verdana">Verdana</option>
+    <option value="Tahoma">Tahoma</option>
+    <option value="Impact">Impact</option>
+    <option value="Comic Sans MS">Comic Sans MS</option>
+  </select>
+  <input type="color" (change)="emitFontColor($event)" title="Font Color" style="width:32px; height:32px; border:none; background:transparent; cursor:pointer; padding:0;" />
   <button type="button" (click)="insertLink.emit()" title="Insert Link">🔗</button>
   <!-- Add more as needed -->
 </div> 

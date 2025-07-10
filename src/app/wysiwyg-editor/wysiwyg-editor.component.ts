@@ -11,11 +11,12 @@ import { ThymeleafAttributeMenuComponent } from './thymeleaf-attribute-menu/thym
 import { ThymeleafRenderService } from './thymeleaf-render.service';
 import { SyntaxHighlightPipe } from './syntax-highlight.pipe';
 import { TableManagerService } from './table-manager.service';
+import { WysiwygToolbarComponent } from './wysiwyg-toolbar/wysiwyg-toolbar.component';
 
 @Component({
   selector: 'app-wysiwyg-editor',
   standalone: true,
-  imports: [CommonModule, FormsModule, HttpClientModule, TableStylePopupComponent, ThymeleafAttributeMenuComponent, SyntaxHighlightPipe],
+  imports: [CommonModule, FormsModule, HttpClientModule, TableStylePopupComponent, ThymeleafAttributeMenuComponent, SyntaxHighlightPipe, WysiwygToolbarComponent],
   templateUrl: './wysiwyg-editor.component.html',
   styleUrl: './wysiwyg-editor.component.css'
 })
@@ -763,6 +764,17 @@ export class WysiwygEditorComponent implements OnInit, AfterViewInit, AfterViewC
       sel.addRange(range);
       this.updateHtml();
     }
+  }
+
+  onFontFamily(family: string) {
+    if (!this.editor || !this.editor.nativeElement) return;
+    this.editorDom.applyFontFamily(family, this.editor.nativeElement);
+    this.updateHtml();
+  }
+  onFontColor(color: string) {
+    if (!this.editor || !this.editor.nativeElement) return;
+    this.editorDom.applyFontColor(color, this.editor.nativeElement);
+    this.updateHtml();
   }
 
   // Toolbar event handlers
