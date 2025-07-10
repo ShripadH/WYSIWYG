@@ -77,8 +77,9 @@ export class TableManagerService {
     if (firstRow && firstRow.cells[colIndex]) {
       this.startColWidth = firstRow.cells[colIndex].offsetWidth;
     }
+    // Set table width to its current pixel width and use fixed layout
+    this.currentTable.style.width = this.currentTable.offsetWidth + 'px';
     this.currentTable.style.tableLayout = 'fixed';
-    this.currentTable.style.width = '100%';
     // Ensure <colgroup> exists and has the right number of <col>s
     let colgroup = table.querySelector('colgroup');
     const numCols = firstRow ? firstRow.cells.length : 0;
@@ -107,14 +108,13 @@ export class TableManagerService {
     const dx = e.clientX - this.startColX;
     const firstRow = this.currentTable.rows[0];
     if (firstRow && this.resizeColIndex !== null && firstRow.cells[this.resizeColIndex]) {
-      const tableWidth = this.currentTable.offsetWidth;
       const newWidthPx = Math.max(30, this.startColWidth + dx);
-      const percent = Math.max(5, (newWidthPx / tableWidth) * 100);
-      const percentStr = percent.toFixed(2) + '%';
       const colgroup = this.currentTable.querySelector('colgroup');
       if (colgroup && colgroup.children[this.resizeColIndex]) {
-        (colgroup.children[this.resizeColIndex] as HTMLTableColElement).style.width = percentStr;
+        (colgroup.children[this.resizeColIndex] as HTMLTableColElement).style.width = newWidthPx + 'px';
       }
+      // Keep table width and layout fixed
+      this.currentTable.style.tableLayout = 'fixed';
     }
   };
 

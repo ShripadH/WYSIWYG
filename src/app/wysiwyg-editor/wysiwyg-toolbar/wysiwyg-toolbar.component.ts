@@ -89,16 +89,6 @@ export class WysiwygToolbarComponent implements OnDestroy {
   }
   toggleTableGrid() {
     this.showTableGrid.emit();
-    // Emit an event or call the parent logic to show the table grid popup
-    // This should match the previous implementation
-    // For most setups, this should emit an event to the parent
-    if (typeof (window as any).showTableGridFromToolbar === 'function') {
-      (window as any).showTableGridFromToolbar();
-    } else if ((this as any).showTableGrid) {
-      (this as any).showTableGrid = !(this as any).showTableGrid;
-    } else if ((this as any).insertTable) {
-      (this as any).insertTable();
-    }
   }
   onInsertImage() {
     this.insertImage.emit();
