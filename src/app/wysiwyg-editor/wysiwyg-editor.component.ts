@@ -314,8 +314,14 @@ export class WysiwygEditorComponent implements OnInit, AfterViewInit, AfterViewC
     if (node.nodeType === Node.ELEMENT_NODE) {
       const el = node as Element;
       result += `${indent}<${el.tagName.toLowerCase()}`;
+      // --- ENHANCED: Output all attributes exactly as in the DOM ---
       for (const attr of Array.from(el.attributes)) {
-        result += ` ${attr.name}="${attr.value}"`;
+        // Always output style attribute if present
+        if (attr.name === 'style' && attr.value.trim()) {
+          result += ` style=\"${attr.value.replace(/\"/g, '&quot;')}\"`;
+        } else {
+          result += ` ${attr.name}=\"${attr.value.replace(/\"/g, '&quot;')}\"`;
+        }
       }
       result += '>';
       if (el.childNodes.length) result += '\n';
