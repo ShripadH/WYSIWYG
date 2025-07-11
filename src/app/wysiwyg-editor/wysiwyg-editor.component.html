@@ -1,160 +1,204 @@
 <div class="wysiwyg-wrapper" #wysiwygWrapper>
-<app-wysiwyg-toolbar
-  (format)="onFormat($event)"
-  (heading)="onHeading($event)"
-  (fontSize)="onFontSize($event)"
-  (insertLink)="onInsertLink()"
-  (fontFamily)="onFontFamily($event)"
-  (fontColor)="onFontColor($event)"
-  (toggleHtml)="toggleRawHtml()"
-  (showTableGrid)="toggleTableGrid()"
-  (insertImage)="triggerImageInput()"
-></app-wysiwyg-toolbar>
-<div *ngIf="!showRawHtml">
-  <div class="wysiwyg-content" contenteditable="true" #editor (input)="onInput()"></div>
-</div>
-<div *ngIf="showRawHtml" class="wysiwyg-raw-html">
-  <h4>Edit Raw HTML:</h4>
-  <textarea [(ngModel)]="rawHtmlInput" rows="12" class="full-width-monospace"></textarea>
-  <h4>Syntax Highlighted Preview:</h4>
-  <div class="syntax-preview">
-    <pre><code [innerHTML]="rawHtmlInput | syntaxHighlight:formatType"></code></pre>
-  </div>
-  <h4>Raw HTML Output:</h4>
-  <pre>{{ formattedHtmlPreview }}</pre>
-</div>
-
-<div class="wysiwyg-footer">
-  <label class="inline-label">
-    <input type="checkbox" [(ngModel)]="showFormattedPreview" /> View Source
-  </label>
-  Custom WYSIWYG Editor &copy; 2024
-</div>
-<div *ngIf="showFormattedPreview">
-  <h4>Formatted HTML Preview:</h4>
-  <pre>{{ formattedHtmlPreview }}</pre>
-</div>
-
-<div class="table-grid-popup" *ngIf="showTableGrid" (mouseleave)="hideTableGrid()">
-  <div class="table-grid-label">{{tableGridRows}}x{{tableGridCols}} Table</div>
-  <div class="table-grid">
-    <div *ngFor="let row of tableGridArray; let r = index" class="table-grid-row">
-      <div *ngFor="let col of tableGridArray; let c = index"
-           class="table-grid-cell"
-           [class.selected]="r < tableGridRows && c < tableGridCols"
-           (mouseenter)="setTableGrid(r+1, c+1)"
-           (click)="insertTableFromGrid(r+1, c+1)"></div>
+  <app-wysiwyg-toolbar (format)="onFormat($event)" (heading)="onHeading($event)" (fontSize)="onFontSize($event)"
+    (insertLink)="onInsertLink()" (fontFamily)="onFontFamily($event)" (fontColor)="onFontColor($event)"
+    (toggleHtml)="toggleRawHtml()" (showTableGrid)="toggleTableGrid()"
+    (insertImage)="triggerImageInput()"></app-wysiwyg-toolbar>
+  <div *ngIf="!showRawHtml">
+    <div class="wysiwyg-table-scroll">
+      <div class="wysiwyg-content" contenteditable="true" #editor (input)="onInput()"></div>
     </div>
   </div>
-</div>
+  <div *ngIf="showRawHtml" class="wysiwyg-raw-html">
 
-<div *ngIf="showImageToolbar" class="image-toolbar" [ngStyle]="{'top.px': imageToolbarTop, 'left.px': imageToolbarLeft}">
-  <button (click)="alignImage('left')" title="Align Left">⬅️</button>
-  <button (click)="alignImage('center')" title="Align Center">↔️</button>
-  <button (click)="alignImage('right')" title="Align Right">➡️</button>
-  <button (click)="removeImage()" title="Remove Image">🗑️</button>
-</div>
-<div *ngIf="selectedImage" class="image-resize-handles"
-     [ngStyle]="{'top.px': imageHandlesTop, 'left.px': imageHandlesLeft, 'width.px': imageHandlesWidth, 'height.px': imageHandlesHeight}">
-  <div class="resize-handle br" (mousedown)="startResize($event, 'br')"></div>
-</div>
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; gap: 8px;">
+      <h4 style="margin-top: 5px; margin-bottom: 5px;">Edit Raw HTML:</h4>
+      <div style="display: flex; align-items: center; gap: 4px;">
+        <button (click)="onBeautifyHtml()" class="beautify-btn">Beautify</button>
+        <button (click)="toggleRawHtmlExpand()" class="expand-btn" [title]="isRawHtmlExpanded ? 'Collapse' : 'Expand'">
+          <span *ngIf="!isRawHtmlExpanded">
+            <!-- Expand SVG icon -->
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#222" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="4 9 4 4 9 4"/>
+              <polyline points="20 9 20 4 15 4"/>
+              <polyline points="20 15 20 20 15 20"/>
+              <polyline points="4 15 4 20 9 20"/>
+            </svg>
+          </span>
+          <span *ngIf="isRawHtmlExpanded">
+            <!-- Collapse SVG icon (inward L corners, matching user image) -->
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#222" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="9 4 9 9 4 9"/>
+              <polyline points="15 4 15 9 20 9"/>
+              <polyline points="20 15 15 15 15 20"/>
+              <polyline points="9 20 9 15 4 15"/>
+            </svg>
+          </span>
+        </button>
+      </div>
+    </div>
+    <textarea [(ngModel)]="rawHtmlInput" [rows]="isRawHtmlExpanded ? 28 : 12" class="full-width-monospace" [style.height]="isRawHtmlExpanded ? '60vh' : ''" style="width: 100%;"></textarea>
+<!--     
+    <h4>Raw HTML Output:</h4>
+    <pre>{{ formattedHtmlPreview }}</pre> -->
+  </div>
 
-<input type="file" #imageInput accept="image/*" class="hidden-input" (change)="onImageSelected($event)" />
-
-<div *ngIf="thymeleafRender.showThymeleafDialog" class="thymeleaf-dialog-backdrop">
-  <div class="thymeleaf-dialog">
-    <h4>Insert Thymeleaf Variable</h4>
-    <label>Attribute:
-      <select [(ngModel)]="thymeleafRender.thymeleafAttr">
-        <option *ngFor="let attr of thymeleafRender.thymeleafAttrOptions" [value]="attr">{{attr}}</option>
-      </select>
+  <div class="wysiwyg-footer">
+    <label class="inline-label">
+      <input type="checkbox" [(ngModel)]="showFormattedPreview" /> View Source
     </label>
-    <br />
-    <ng-container *ngIf="thymeleafRender.thymeleafAttr === 'th:each'; else normalThymeleaf">
-      <label>Variable Name:
-        <input [(ngModel)]="thymeleafRender.thymeleafEachVar" placeholder="e.g. student" />
-      </label>
-      <label>Collection Name:
-        <input [(ngModel)]="thymeleafRender.thymeleafEachCollection" placeholder="e.g. students" />
-      </label>
-      <label>Fields (comma-separated):
-        <input [(ngModel)]="thymeleafRender.thymeleafEachFields" placeholder="e.g. id,name" />
-      </label>
-      <label>
-        <input type="checkbox" [(ngModel)]="thymeleafRender.thymeleafEachAddHeader" /> Add header row
-      </label>
-      <label *ngIf="thymeleafRender.thymeleafEachAddHeader">
-        Header display values (comma-separated):
-        <input [(ngModel)]="thymeleafRender.thymeleafEachHeaderValues" placeholder="e.g. ID,Name" />
-      </label>
-    </ng-container>
-    <ng-template #normalThymeleaf>
-      <label>Variable / Expression:
-        <input [(ngModel)]="thymeleafRender.thymeleafVar" placeholder="e.g. user.name" />
-      </label>
-    </ng-template>
-    <br />
-    <button (click)="thymeleafRender.confirmThymeleafDialog(editor.nativeElement, updateHtml.bind(this))">Insert</button>
-    <button (click)="thymeleafRender.cancelThymeleafDialog()">Cancel</button>
+    Custom WYSIWYG Editor &copy; 2024
   </div>
-</div>
+  <div *ngIf="showFormattedPreview">
+    <h4>Formatted HTML Preview:</h4>
+    <pre>{{ formattedHtmlPreview }}</pre>
+  </div>
 
-<!-- Floating Cell Style Icon -->
-<div *ngIf="showCellStyleIcon" class="cell-style-icon"
-     [ngStyle]="{'top.px': cellStyleIconTop, 'left.px': cellStyleIconLeft}"
-     (click)="openCellStyleSidebar()" title="Edit Cell Style">
-  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#3b6cff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
-</div>
-
-<!-- Merge Template Section -->
-<div class="merge-section">
-  <h4>Merge & Render Thymeleaf Template</h4>
-  <label class="json-label">JSON Data:</label>
-  <textarea [(ngModel)]="jsonPayload" rows="6" class="merge-textarea"></textarea>
-  <button (click)="mergeTemplate()" [disabled]="isMerging" class="merge-button">
-    {{ isMerging ? 'Merging...' : 'Merge & Render' }}
-  </button>
-  <div *ngIf="mergeResult" class="merge-result">
-    <h5>Rendered Output:</h5>
-    <div class="merge-result-box">
-      <div [innerHTML]="mergeResult"></div>
+  <div class="table-grid-popup" *ngIf="showTableGrid" (mouseleave)="hideTableGrid()">
+    <div class="table-grid-label">{{tableGridRows}}x{{tableGridCols}} Table</div>
+    <div class="table-grid">
+      <div *ngFor="let row of tableGridArray; let r = index" class="table-grid-row">
+        <div *ngFor="let col of tableGridArray; let c = index" class="table-grid-cell"
+          [class.selected]="r < tableGridRows && c < tableGridCols" (mouseenter)="setTableGrid(r+1, c+1)"
+          (click)="insertTableFromGrid(r+1, c+1)"></div>
+      </div>
     </div>
   </div>
-</div>
 
-<!-- Floating Table Style Icon -->
-<div *ngIf="selectedTable"
-     class="table-style-icon"
-     [ngStyle]="{top: tableIconTop + 'px', left: tableIconLeft + 'px', position: 'absolute', zIndex: 999}"
-     (click)="openStylePopup('table', selectedTable)">
-  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>
-</div>
+  <div *ngIf="showImageToolbar" class="image-toolbar"
+    [ngStyle]="{'top.px': imageToolbarTop, 'left.px': imageToolbarLeft}">
+    <button (click)="alignImage('left')" title="Align Left">⬅️</button>
+    <button (click)="alignImage('center')" title="Align Center">↔️</button>
+    <button (click)="alignImage('right')" title="Align Right">➡️</button>
+    <button (click)="removeImage()" title="Remove Image">🗑️</button>
+  </div>
+  <div *ngIf="selectedImage" class="image-resize-handles"
+    [ngStyle]="{'top.px': imageHandlesTop, 'left.px': imageHandlesLeft, 'width.px': imageHandlesWidth, 'height.px': imageHandlesHeight}">
+    <div class="resize-handle br" (mousedown)="startResize($event, 'br')"></div>
+  </div>
 
-<!-- Floating Row Handle for Selected Row Only -->
-<div *ngIf="selectedRowForHandle"
-     class="row-style-handle"
-     [ngStyle]="{top: selectedRowHandleTop + 'px', left: selectedRowHandleLeft + 'px', position: 'absolute', zIndex: 999}"
-     (click)="selectRowForStyle(selectedRowForHandle, selectedRowHandleTop, selectedRowHandleLeft)">
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ee9a5f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18"/></svg>
-</div>
+  <input type="file" #imageInput accept="image/*" class="hidden-input" (change)="onImageSelected($event)" />
 
-<app-table-style-popup
-  *ngIf="styleTarget"
-  [styleType]="styleTarget.type"
-  [target]="styleTarget.ref"
-  (applyStyle)="onApplyStyle($event)"
-  (close)="styleTarget = null"
-></app-table-style-popup>
+  <div *ngIf="thymeleafRender.showThymeleafDialog" class="thymeleaf-dialog-backdrop">
+    <div class="thymeleaf-dialog">
+      <h4>Insert Thymeleaf Variable</h4>
+      <label>Attribute:
+        <select [(ngModel)]="thymeleafRender.thymeleafAttr">
+          <option *ngFor="let attr of thymeleafRender.thymeleafAttrOptions" [value]="attr">{{attr}}</option>
+        </select>
+      </label>
+      <br />
+      <ng-container *ngIf="thymeleafRender.thymeleafAttr === 'th:each'; else normalThymeleaf">
+        <label>Variable Name:
+          <input [(ngModel)]="thymeleafRender.thymeleafEachVar" placeholder="e.g. student" />
+        </label>
+        <label>Collection Name:
+          <input [(ngModel)]="thymeleafRender.thymeleafEachCollection" placeholder="e.g. students" />
+        </label>
+        <label>Fields (comma-separated):
+          <input [(ngModel)]="thymeleafRender.thymeleafEachFields" placeholder="e.g. id,name" />
+        </label>
+        <label>
+          <input type="checkbox" [(ngModel)]="thymeleafRender.thymeleafEachAddHeader" /> Add header row
+        </label>
+        <label *ngIf="thymeleafRender.thymeleafEachAddHeader">
+          Header display values (comma-separated):
+          <input [(ngModel)]="thymeleafRender.thymeleafEachHeaderValues" placeholder="e.g. ID,Name" />
+        </label>
+      </ng-container>
+      <ng-template #normalThymeleaf>
+        <label>Variable / Expression:
+          <input [(ngModel)]="thymeleafRender.thymeleafVar" placeholder="e.g. user.name" />
+        </label>
+      </ng-template>
+      <br />
+      <button
+        (click)="thymeleafRender.confirmThymeleafDialog(editor.nativeElement, updateHtml.bind(this))">Insert</button>
+      <button (click)="thymeleafRender.cancelThymeleafDialog()">Cancel</button>
+    </div>
+  </div>
 
-<app-thymeleaf-attribute-menu
-  [targetElement]="thymeleafRender.thymeleafTargetElement"
-  [menuPosition]="thymeleafRender.thymeleafMenuPosition"
-  [showMenu]="thymeleafRender.showThymeleafMenu"
-  [showDialog]="thymeleafRender.showThymeleafAttrDialog"
-  (attributeChange)="thymeleafRender.onThymeleafAttributeChange($event, updateHtml.bind(this))"
-  (closeMenu)="thymeleafRender.onThymeleafMenuClose()"
-  (openDialog)="thymeleafRender.onThymeleafOpenDialog($event)"
-  (closeDialog)="thymeleafRender.onThymeleafCloseDialog()"
-  (insertHtml)="onInsertHtml($event)"
-></app-thymeleaf-attribute-menu>
+  <!-- Floating Cell Style Icon -->
+  <div *ngIf="showCellStyleIcon" class="cell-style-icon"
+    [ngStyle]="{'top.px': cellStyleIconTop, 'left.px': cellStyleIconLeft}" (click)="openCellStyleSidebar()"
+    title="Edit Cell Style">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#3b6cff" stroke-width="2" stroke-linecap="round"
+      stroke-linejoin="round">
+      <path d="M12 20h9" />
+      <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z" />
+    </svg>
+  </div>
+
+  <!-- Merge Template Section -->
+  <div class="merge-section">
+    <h4>Merge & Render Thymeleaf Template</h4>
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; gap: 8px;">
+      <label class="json-label" style="margin-bottom: 0;">JSON Data:</label>
+      <div style="display: flex; align-items: center; gap: 4px;">
+        <button (click)="onBeautifyJson()" class="beautify-btn" title="Beautify JSON" style="padding: 2px 6px;">Beautify</button>
+        <button (click)="toggleJsonExpand()" class="expand-btn" [title]="isJsonExpanded ? 'Collapse' : 'Expand'" style="padding: 2px 6px;">
+          <span *ngIf="!isJsonExpanded">
+            <!-- Expand SVG icon -->
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#222" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="4 9 4 4 9 4"/>
+              <polyline points="20 9 20 4 15 4"/>
+              <polyline points="20 15 20 20 15 20"/>
+              <polyline points="4 15 4 20 9 20"/>
+            </svg>
+          </span>
+          <span *ngIf="isJsonExpanded">
+            <!-- Collapse SVG icon (inward L corners) -->
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#222" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="9 4 9 9 4 9"/>
+              <polyline points="15 4 15 9 20 9"/>
+              <polyline points="20 15 15 15 15 20"/>
+              <polyline points="9 20 9 15 4 15"/>
+            </svg>
+          </span>
+        </button>
+      </div>
+    </div>
+    <textarea [(ngModel)]="jsonPayload" [rows]="isJsonExpanded ? 20 : 6" class="merge-textarea" [style.height]="isJsonExpanded ? '40vh' : ''"></textarea>
+    <button (click)="mergeTemplate()" [disabled]="isMerging" class="merge-button">
+      {{ isMerging ? 'Merging...' : 'Merge & Render' }}
+    </button>
+    <div *ngIf="mergeResult" class="merge-result">
+      <h5>Rendered Output:</h5>
+      <div class="merge-result-box">
+        <div [innerHTML]="mergeResult"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Floating Table Style Icon -->
+  <div *ngIf="selectedTable" class="table-style-icon"
+    [ngStyle]="{top: tableIconTop + 'px', left: tableIconLeft + 'px', position: 'absolute', zIndex: 999}"
+    (click)="openStylePopup('table', selectedTable)">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round"
+      stroke-linejoin="round">
+      <rect x="3" y="3" width="18" height="18" rx="2" />
+      <path d="M3 9h18M3 15h18M9 3v18M15 3v18" />
+    </svg>
+  </div>
+
+  <!-- Floating Row Handle for Selected Row Only -->
+  <div *ngIf="selectedRowForHandle" class="row-style-handle"
+    [ngStyle]="{top: selectedRowHandleTop + 'px', left: selectedRowHandleLeft + 'px', position: 'absolute', zIndex: 999}"
+    (click)="selectRowForStyle(selectedRowForHandle, selectedRowHandleTop, selectedRowHandleLeft)">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ee9a5f" stroke-width="2" stroke-linecap="round"
+      stroke-linejoin="round">
+      <rect x="3" y="3" width="18" height="18" rx="2" />
+      <path d="M3 9h18M3 15h18" />
+    </svg>
+  </div>
+
+  <app-table-style-popup *ngIf="styleTarget" [styleType]="styleTarget.type" [target]="styleTarget.ref"
+    (applyStyle)="onApplyStyle($event)" (close)="styleTarget = null"></app-table-style-popup>
+
+  <app-thymeleaf-attribute-menu [targetElement]="thymeleafRender.thymeleafTargetElement"
+    [menuPosition]="thymeleafRender.thymeleafMenuPosition" [showMenu]="thymeleafRender.showThymeleafMenu"
+    [showDialog]="thymeleafRender.showThymeleafAttrDialog"
+    (attributeChange)="thymeleafRender.onThymeleafAttributeChange($event, updateHtml.bind(this))"
+    (closeMenu)="thymeleafRender.onThymeleafMenuClose()" (openDialog)="thymeleafRender.onThymeleafOpenDialog($event)"
+    (closeDialog)="thymeleafRender.onThymeleafCloseDialog()"
+    (insertHtml)="onInsertHtml($event)"></app-thymeleaf-attribute-menu>
 </div>

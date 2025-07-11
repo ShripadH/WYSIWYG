@@ -9,14 +9,13 @@ import { HttpClientModule } from '@angular/common/http';
 import { TableStylePopupComponent } from './table-style-popup/table-style-popup.component';
 import { ThymeleafAttributeMenuComponent } from './thymeleaf-attribute-menu/thymeleaf-attribute-menu.component';
 import { ThymeleafRenderService } from './thymeleaf-render.service';
-import { SyntaxHighlightPipe } from './syntax-highlight.pipe';
 import { TableManagerService } from './table-manager.service';
 import { WysiwygToolbarComponent } from './wysiwyg-toolbar/wysiwyg-toolbar.component';
 
 @Component({
   selector: 'app-wysiwyg-editor',
   standalone: true,
-  imports: [CommonModule, FormsModule, HttpClientModule, TableStylePopupComponent, ThymeleafAttributeMenuComponent, SyntaxHighlightPipe, WysiwygToolbarComponent],
+  imports: [CommonModule, FormsModule, HttpClientModule, TableStylePopupComponent, ThymeleafAttributeMenuComponent, WysiwygToolbarComponent],
   templateUrl: './wysiwyg-editor.component.html',
   styleUrl: './wysiwyg-editor.component.css'
 })
@@ -81,6 +80,16 @@ export class WysiwygEditorComponent implements OnInit, AfterViewInit, AfterViewC
   isMerging: boolean = false;
   private editorSpecificClassesToRemove = ['thymeleaf-var'];
   private lastRenderedTableHtml: string = '';
+  isRawHtmlExpanded = false;
+  isJsonExpanded = false;
+
+  toggleRawHtmlExpand() {
+    this.isRawHtmlExpanded = !this.isRawHtmlExpanded;
+  }
+
+  toggleJsonExpand() {
+    this.isJsonExpanded = !this.isJsonExpanded;
+  }
 
   formatType: 'json' | 'html' = 'html';
 
@@ -1000,4 +1009,59 @@ export class WysiwygEditorComponent implements OnInit, AfterViewInit, AfterViewC
   saveThymeleafEachEdit() {
     this.thymeleafRender.saveThymeleafEachEdit(this.updateHtml.bind(this));
   }
+
+  onBeautifyHtml() {
+    // Format only the body content, not the full HTML doc
+    const formatted = this.formatHtml('<html><head></head><body>' + this.rawHtmlInput + '</body></html>');
+    // Remove the outer <html>, <head>, <body> tags for textarea
+    const match = formatted.match(/<body>([\s\S]*)<\/body>/i);
+    this.rawHtmlInput = match ? match[1].trim() : formatted;
+  }
+  
+  formatHtml1(html: string): string {
+    let indent = 0;
+    const tab = '  ';
+    return html
+      .replace(/>\s*</g, '><') // remove existing whitespace between tags
+      .replace(/</g, '\n<')    // break before every tag
+      .replace(/\n\s*\n/g, '\n') // remove multiple blank lines
+      .split('\n')
+      .map((line) => {
+        line = line.trim();
+        if (!line) return '';
+  
+        if (line.match(/^<\/\w/)) indent--; // closing tag, reduce indent first
+  
+        const result = tab.repeat(indent) + line;
+  
+        if (line.match(/^<\w[^>]*[^/]>/) && !line.startsWith('<!') && !line.includes('</')) {
+          indent++; // open tag, increase indent
+        }
+  
+        return result;
+      })
+      .join('\n')
+      .trim();
+  }
+  
+  beautifyJson(jsonString: string): string {
+    try {
+      const parsed = JSON.parse(jsonString);
+      return JSON.stringify(parsed, null, 2);
+    } catch (e) {
+      return 'Invalid JSON';
+    }
+  }
+
+  onBeautifyJson() {
+    const beautified = this.beautifyJson(this.jsonPayload);
+    if (beautified === 'Invalid JSON') {
+      alert('Invalid JSON: Please check your syntax.');
+      return;
+    }
+    this.jsonPayload = beautified;
+  }
+  
+
+
 }

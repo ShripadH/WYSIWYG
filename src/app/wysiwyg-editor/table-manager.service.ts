@@ -108,12 +108,28 @@ export class TableManagerService {
     const dx = e.clientX - this.startColX;
     const firstRow = this.currentTable.rows[0];
     if (firstRow && this.resizeColIndex !== null && firstRow.cells[this.resizeColIndex]) {
-      const newWidthPx = Math.max(30, this.startColWidth + dx);
       const colgroup = this.currentTable.querySelector('colgroup');
-      if (colgroup && colgroup.children[this.resizeColIndex]) {
-        (colgroup.children[this.resizeColIndex] as HTMLTableColElement).style.width = newWidthPx + 'px';
+      if (!colgroup) return;
+      // Get current col widths
+      let totalWidth = 0;
+      const colWidths: number[] = [];
+      for (let i = 0; i < colgroup.children.length; i++) {
+        const col = colgroup.children[i] as HTMLTableColElement;
+        const w = parseInt(col.style.width) || firstRow.cells[i].offsetWidth;
+        colWidths.push(w);
+        totalWidth += w;
       }
-      // Keep table width and layout fixed
+      // Get editor width (parent of table)
+      const editor = this.currentTable.closest('.wysiwyg-content') as HTMLElement;
+      const editorWidth = editor ? editor.offsetWidth : 0;
+      // Calculate intended new width for the resized column
+      let newWidthPx = Math.max(30, this.startColWidth + dx);
+      let newTotal = totalWidth - colWidths[this.resizeColIndex] + newWidthPx;
+      if (editorWidth && newTotal > editorWidth) {
+        newWidthPx = colWidths[this.resizeColIndex] + (editorWidth - totalWidth);
+        newWidthPx = Math.max(30, newWidthPx);
+      }
+      (colgroup.children[this.resizeColIndex] as HTMLTableColElement).style.width = newWidthPx + 'px';
       this.currentTable.style.tableLayout = 'fixed';
     }
   };
@@ -121,6 +137,7 @@ export class TableManagerService {
   onColResizeEnd = (onUpdate: () => void) => {
     this.resizingCol = false;
     this.resizeColIndex = null;
+    // Remove logic that sets justResizedColumn
     this.currentTable = null;
     document.removeEventListener('mousemove', this.onColResizeMove);
     document.removeEventListener('mouseup', () => this.onColResizeEnd(onUpdate));

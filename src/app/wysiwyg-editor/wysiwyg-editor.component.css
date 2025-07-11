@@ -432,3 +432,11 @@ table th, table td {
   padding: 18px;
   min-height: 40px;
 }
+
+.wysiwyg-table-scroll {
+  overflow-x: auto;
+  max-width: 100%;
+}
+.wysiwyg-table-scroll table {
+  min-width: 100%;
+}
