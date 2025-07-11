@@ -868,6 +868,13 @@ export class WysiwygEditorComponent implements OnInit, AfterViewInit, AfterViewC
         next: (result: string) => {
           this.mergeResult = result;
           this.isMerging = false;
+          // Open new tab and show HTML
+          const newWindow = window.open('', '_blank');
+          if (newWindow) {
+            newWindow.document.open();
+            newWindow.document.write(result);
+            newWindow.document.close();
+          }
         },
         error: (err) => {
           alert('Merge failed: ' + (err?.message || err));
@@ -885,6 +892,7 @@ export class WysiwygEditorComponent implements OnInit, AfterViewInit, AfterViewC
   }
 
   selectRowForStyle(row: HTMLTableRowElement, top: number, left: number) {
+    console.log("selectRowForStyle :: selectRowForStyle");
     this.selectedRow = row;
     this.selectedRowIconTop = top;
     this.selectedRowIconLeft = left;
@@ -898,11 +906,12 @@ export class WysiwygEditorComponent implements OnInit, AfterViewInit, AfterViewC
     const row = target.closest('tr') as HTMLTableRowElement;
     if (row && this.selectedTable && this.selectedTable.contains(row)) {
       const rowRect = row.getBoundingClientRect();
-      this.selectRowForStyle(
-        row,
-        rowRect.top + window.scrollY + rowRect.height / 2 - 11,
-        this.selectedTable.getBoundingClientRect().left + window.scrollX - 28
-      );
+      console.log("onEditorRowClick :: selectRowForStyle");   
+      // this.selectRowForStyle(
+      //   row,
+      //   rowRect.top + window.scrollY + rowRect.height / 2 - 11,
+      //   this.selectedTable.getBoundingClientRect().left + window.scrollX - 28
+      // );
       event.stopPropagation();
     } else {
       this.selectedRow = null;

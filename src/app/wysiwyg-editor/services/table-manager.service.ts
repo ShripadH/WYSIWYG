@@ -65,22 +65,21 @@ export class TableManagerService {
       }
 
       // --- NEW: Inject table height resize handle ---
-      let tableHeightHandle = table.querySelector('.table-height-resize-handle');
+      let tableHeightHandle = table.querySelector('.table-height-resize-handle') as HTMLDivElement | null;
       if (!tableHeightHandle) {
-        tableHeightHandle = document.createElement('div');
+        tableHeightHandle = document.createElement('div') as HTMLDivElement;
         tableHeightHandle.className = 'table-height-resize-handle';
-        tableHeightHandle.style.position = 'absolute';
-        tableHeightHandle.style.left = '0';
-        tableHeightHandle.style.right = '0';
-        tableHeightHandle.style.bottom = '-6px';
-        tableHeightHandle.style.height = '12px';
-        tableHeightHandle.style.cursor = 'row-resize';
-        tableHeightHandle.style.zIndex = '30';
-        tableHeightHandle.style.background = 'rgba(0,0,0,0.1)';
+        // tableHeightHandle.style.position = 'absolute';
+        // tableHeightHandle.style.left = '0';
+        // tableHeightHandle.style.right = '0';
+        // tableHeightHandle.style.bottom = '-5'; // changed from '-6px' to '0'
+        // tableHeightHandle.style.height = '12px';
+        // tableHeightHandle.style.cursor = 'row-resize';
+        // tableHeightHandle.style.zIndex = '30';
+        // tableHeightHandle.style.background = 'rgba(51, 51, 237, 0.1)';
         tableHeightHandle.addEventListener('mousedown', (e: MouseEvent) => this.startTableHeightResize(e, table));
-        table.parentElement?.appendChild(tableHeightHandle);
-        // Position handle absolutely relative to table
         table.style.position = 'relative';
+        table.appendChild(tableHeightHandle); // append to table, not parent
       }
       // --- NEW: Inject row height resize handles ---
       (Array.from(table.rows) as HTMLTableRowElement[]).forEach((row, rowIdx) => {
@@ -88,14 +87,14 @@ export class TableManagerService {
         if (!rowHeightHandle) {
           rowHeightHandle = document.createElement('div') as HTMLDivElement;
           rowHeightHandle.className = 'row-height-resize-handle';
-          rowHeightHandle.style.position = 'absolute';
-          rowHeightHandle.style.left = '0';
-          rowHeightHandle.style.right = '0';
-          rowHeightHandle.style.bottom = '-4px';
-          rowHeightHandle.style.height = '3px';
-          rowHeightHandle.style.cursor = 'row-resize';
-          rowHeightHandle.style.zIndex = '25';
-          rowHeightHandle.style.background = 'rgba(0,0,0,0.08)';
+          // rowHeightHandle.style.position = 'absolute';
+          // rowHeightHandle.style.left = '0';
+          // rowHeightHandle.style.right = '0';
+          // rowHeightHandle.style.bottom = '-4px';
+          // rowHeightHandle.style.height = '3px';
+          // rowHeightHandle.style.cursor = 'row-resize';
+          // rowHeightHandle.style.zIndex = '25';
+          // rowHeightHandle.style.background = 'rgba(109, 240, 83, 0.08)';
           (rowHeightHandle as HTMLDivElement).addEventListener('mousedown', (e: MouseEvent) => this.startRowHeightResize(e, row));
           // Position handle absolutely relative to row
           (row as HTMLTableRowElement).style.position = 'relative';
