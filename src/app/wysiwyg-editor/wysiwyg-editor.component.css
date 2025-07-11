@@ -440,3 +440,35 @@ table th, table td {
 .wysiwyg-table-scroll table {
   min-width: 100%;
 }
+
+.wysiwyg-row-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+  gap: 8px;
+}
+
+.wysiwyg-inline-controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.wysiwyg-row-label {
+  margin-bottom: 0;
+  margin-top: 5px;
+  margin-bottom: 5px;
+}
+
+.wysiwyg-expandable-textarea {
+  width: 100%;
+  transition: height 0.2s;
+}
+.wysiwyg-expandable-textarea.expanded {
+  height: 60vh !important;
+}
+
+.merge-textarea.wysiwyg-expandable-textarea.expanded {
+  height: 40vh !important;
+}

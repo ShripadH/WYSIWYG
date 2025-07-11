@@ -455,6 +455,7 @@ export class ThymeleafRenderService {
 
   // Context menu handler for Thymeleaf
   onEditorContextMenu(event: MouseEvent, updateHtml: () => void) {
+    console.log('[ThymeleafRenderService] onEditorContextMenu called', {event, showThymeleafMenu: this.showThymeleafMenu});
     event.preventDefault();
     const target = event.target as HTMLElement;
     const sel = window.getSelection();
@@ -479,8 +480,10 @@ export class ThymeleafRenderService {
       newRange.selectNodeContents(span);
       sel.addRange(newRange);
       updateHtml();
+      console.log('[ThymeleafRenderService] Inserted thymeleaf-var span');
     } else {
       // If no selection, do nothing
+      console.log('[ThymeleafRenderService] No selection, not showing menu');
       return;
     }
     // Always close all dialogs before opening the menu
@@ -489,6 +492,14 @@ export class ThymeleafRenderService {
     this.showThymeleafMenu = true;
     this.thymeleafMenuPosition = { x: event.clientX, y: event.clientY };
     this.thymeleafTargetElement = target;
+    console.log('[ThymeleafRenderService] showThymeleafMenu set to true', {showThymeleafMenu: this.showThymeleafMenu, menuPosition: this.thymeleafMenuPosition});
+    // Try to force change detection if available
+    if ((window as any).ng && (window as any).ng.getInjector) {
+      try {
+        const appRef = (window as any).ng.getInjector(document.body).get((window as any).ng.coreTokens.ApplicationRef);
+        if (appRef) appRef.tick();
+      } catch (e) { console.warn('Could not force ApplicationRef.tick()', e); }
+    }
   }
 
   // Insert HTML handler for Thymeleaf

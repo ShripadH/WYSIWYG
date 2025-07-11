@@ -1,15 +1,15 @@
 import { Component, ViewChild, ElementRef, Output, EventEmitter, AfterViewInit, AfterViewChecked, OnDestroy, OnInit, Renderer2, ChangeDetectorRef, NgZone } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { EditorDomService } from './editor-dom.service';
-import { TableService } from './table.service';
-import { ImageService } from './image.service';
+import { EditorDomService } from './services/editor-dom.service';
+import { TableService } from './services/table.service';
+import { ImageService } from './services/image.service';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { HttpClientModule } from '@angular/common/http';
 import { TableStylePopupComponent } from './table-style-popup/table-style-popup.component';
 import { ThymeleafAttributeMenuComponent } from './thymeleaf-attribute-menu/thymeleaf-attribute-menu.component';
-import { ThymeleafRenderService } from './thymeleaf-render.service';
-import { TableManagerService } from './table-manager.service';
+import { ThymeleafRenderService } from './services/thymeleaf-render.service';
+import { TableManagerService } from './services/table-manager.service';
 import { WysiwygToolbarComponent } from './wysiwyg-toolbar/wysiwyg-toolbar.component';
 
 @Component({
@@ -952,12 +952,14 @@ export class WysiwygEditorComponent implements OnInit, AfterViewInit, AfterViewC
 
   onEditorContextMenu = (event: MouseEvent) => {
     const sel = window.getSelection();
+    console.log('[WysiwygEditorComponent] onEditorContextMenu called', {sel, anchorNode: sel?.anchorNode, isCollapsed: sel?.isCollapsed, rangeCount: sel?.rangeCount});
     if (
       sel &&
       sel.rangeCount > 0 &&
       !sel.isCollapsed &&
       this.editor.nativeElement.contains(sel.anchorNode)
     ) {
+      console.log('[WysiwygEditorComponent] Valid selection for Thymeleaf context menu');
       this.thymeleafRender.onEditorContextMenu(event, this.updateHtml.bind(this));
     } else {
       // No valid selection, do not show menu
@@ -965,6 +967,7 @@ export class WysiwygEditorComponent implements OnInit, AfterViewInit, AfterViewC
       this.thymeleafRender.showThymeleafMenu = false;
       this.thymeleafRender.showThymeleafDialog = false;
       this.thymeleafRender.showThymeleafAttrDialog = false;
+      console.log('[WysiwygEditorComponent] No valid selection, menu not shown');
     }
   };
 
