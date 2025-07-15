@@ -83,6 +83,9 @@ export class WysiwygEditorComponent implements OnInit, AfterViewInit, AfterViewC
   isRawHtmlExpanded = false;
   isJsonExpanded = false;
 
+  // Add a variable to track previous showRawHtml state
+  private prevShowRawHtml = false;
+
   toggleRawHtmlExpand() {
     this.isRawHtmlExpanded = !this.isRawHtmlExpanded;
   }
@@ -194,6 +197,24 @@ export class WysiwygEditorComponent implements OnInit, AfterViewInit, AfterViewC
         this.cdr
       );
     }
+    // --- Fix: Re-attach event listeners when toggling from raw HTML back to WYSIWYG ---
+    if (!this.showRawHtml && this.prevShowRawHtml) {
+      // We just switched from raw HTML to WYSIWYG, re-attach event listeners
+      if (this.editor && this.editor.nativeElement) {
+        this.editor.nativeElement.removeEventListener('click', this.onEditorClick);
+        this.editor.nativeElement.removeEventListener('click', this.onTableCellClick, true);
+        this.editor.nativeElement.removeEventListener('keydown', this.handleTableTabKey);
+        this.editor.nativeElement.removeEventListener('click', this.onEditorRowClick, true);
+        this.editor.nativeElement.removeEventListener('contextmenu', this.onEditorContextMenu, true);
+        // Attach again
+        this.editor.nativeElement.addEventListener('click', this.onEditorClick);
+        this.editor.nativeElement.addEventListener('click', this.onTableCellClick, true);
+        this.editor.nativeElement.addEventListener('keydown', this.handleTableTabKey);
+        this.editor.nativeElement.addEventListener('click', this.onEditorRowClick, true);
+        this.editor.nativeElement.addEventListener('contextmenu', this.onEditorContextMenu, true);
+      }
+    }
+    this.prevShowRawHtml = this.showRawHtml;
   }
 
   ngOnDestroy() {
