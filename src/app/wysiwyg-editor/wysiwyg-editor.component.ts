@@ -867,6 +867,15 @@ export class WysiwygEditorComponent implements OnInit, AfterViewInit, AfterViewC
     return div.innerHTML;
   }
 
+  // Helper to remove all contenteditable attributes from HTML string
+  private removeContentEditableAttributes(html: string): string {
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = html;
+    const elements = tempDiv.querySelectorAll('[contenteditable]');
+    elements.forEach(el => el.removeAttribute('contenteditable'));
+    return tempDiv.innerHTML;
+  }
+
   mergeTemplate() {
     this.isMerging = true;
     let data: any = {};
@@ -878,7 +887,9 @@ export class WysiwygEditorComponent implements OnInit, AfterViewInit, AfterViewC
       return;
     }
     // Remove editor-specific classes before sending
-    const cleanHtml = this.stripEditorSpecificClasses(this.editor.nativeElement.innerHTML);
+    let cleanHtml = this.stripEditorSpecificClasses(this.editor.nativeElement.innerHTML);
+    // Remove all contenteditable attributes
+    cleanHtml = this.removeContentEditableAttributes(cleanHtml);
     const body = {
       html: '<html><body>' + cleanHtml + '</body></html>',
       data
