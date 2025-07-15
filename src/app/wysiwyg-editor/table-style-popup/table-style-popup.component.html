@@ -22,7 +22,21 @@
       </div>
       <div class="style-control">
         <label>Width:</label>
-        <input type="number" min="1" max="10" [(ngModel)]="borderWidth" (ngModelChange)="onBorderWidthChange($event)" class="input-width-small" /> px
+        <input type="text" [(ngModel)]="tableWidth" (ngModelChange)="onTableWidthChange($event)" class="input-width-medium" placeholder="e.g. 100%, 400px" />
+        <span style="margin-left:8px;">
+          <button type="button" (click)="setTableWidthPreset('100%')">100%</button>
+          <button type="button" (click)="setTableWidthPreset('80%')">80%</button>
+          <button type="button" (click)="setTableWidthPreset('50%')">60%</button>
+          <button type="button" (click)="setTableWidthPreset('80%')">80%</button>
+        </span>
+      </div>
+      <div class="style-control">
+        <label>Alignment:</label>
+        <span style="display:inline-flex;gap:4px;">
+          <button type="button" [class.selected]="tableAlign==='left'" (click)="setTableAlign('left')" title="Align Left">⬅️</button>
+          <button type="button" [class.selected]="tableAlign==='center'" (click)="setTableAlign('center')" title="Align Center">↔️</button>
+          <button type="button" [class.selected]="tableAlign==='right'" (click)="setTableAlign('right')" title="Align Right">➡️</button>
+        </span>
       </div>
       <div class="style-control">
         <label>Style:</label>

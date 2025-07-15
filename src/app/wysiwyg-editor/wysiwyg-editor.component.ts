@@ -954,8 +954,23 @@ export class WysiwygEditorComponent implements OnInit, AfterViewInit, AfterViewC
     console.log('onApplyStyle', event, this.styleTarget?.ref);
     if (!this.styleTarget?.ref) return;
     if (event.type === 'table') {
-      const { borderColor, borderWidth, borderStyle } = event.styles;
+      const { borderColor, borderWidth, borderStyle, tableWidth, tableAlign } = event.styles;
       this.styleTarget.ref.style.border = `${borderWidth}px ${borderStyle} ${borderColor}`;
+      // Table width
+      if (tableWidth) {
+        this.styleTarget.ref.style.width = tableWidth;
+      }
+      // Table alignment
+      if (tableAlign === 'left') {
+        this.styleTarget.ref.style.marginLeft = '0';
+        this.styleTarget.ref.style.marginRight = 'auto';
+      } else if (tableAlign === 'center') {
+        this.styleTarget.ref.style.marginLeft = 'auto';
+        this.styleTarget.ref.style.marginRight = 'auto';
+      } else if (tableAlign === 'right') {
+        this.styleTarget.ref.style.marginLeft = 'auto';
+        this.styleTarget.ref.style.marginRight = '0';
+      }
       // Optionally apply to all cells
       const cells = this.styleTarget.ref.querySelectorAll?.('td, th');
       if (cells) {
@@ -1112,6 +1127,13 @@ export class WysiwygEditorComponent implements OnInit, AfterViewInit, AfterViewC
     this.jsonPayload = beautified;
   }
   
+  onThymeleafDialogBackdropClick(event: MouseEvent) {
+    console.log('Backdrop click handler fired', event.target);
+    if ((event.target as HTMLElement).classList.contains('thymeleaf-dialog-backdrop')) {
+      this.thymeleafRender.cancelThymeleafDialog();
+      this.cdr.detectChanges();
+    }
+  }
 
 
 }

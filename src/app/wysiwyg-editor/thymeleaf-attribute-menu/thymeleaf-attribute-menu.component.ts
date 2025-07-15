@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, SimpleChanges, OnChanges } from '@angular/core';
+import { Component, Input, Output, EventEmitter, SimpleChanges, OnChanges, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
@@ -9,7 +9,7 @@ import { FormsModule } from '@angular/forms';
   templateUrl: './thymeleaf-attribute-menu.component.html',
   styleUrl: './thymeleaf-attribute-menu.component.css'
 })
-export class ThymeleafAttributeMenuComponent implements OnChanges {
+export class ThymeleafAttributeMenuComponent implements OnChanges, OnDestroy {
   @Input() targetElement: HTMLElement | null = null;
   @Input() menuPosition: { x: number, y: number } | null = null;
   @Input() showMenu = false;
@@ -44,6 +44,8 @@ export class ThymeleafAttributeMenuComponent implements OnChanges {
 
   savedRange: Range | null = null;
 
+  private documentClickUnlisten: (() => void) | null = null;
+
   get presentAttributes(): string[] {
     if (!this.targetElement) return [];
     return this.supportedAttributes.filter(attr => {
@@ -58,6 +60,47 @@ export class ThymeleafAttributeMenuComponent implements OnChanges {
   ngOnChanges(changes: SimpleChanges) {
     if (changes['showDialog'] && this.showDialog && this.selectedAttribute && this.targetElement) {
       this.attributeValue = this.targetElement.getAttribute(this.selectedAttribute) || '';
+    }
+    // Add document click listener for menu/dialog
+    if ((changes['showMenu'] && this.showMenu) || (changes['showDialog'] && this.showDialog)) {
+      setTimeout(() => this.addDocumentClickListener());
+    }
+    // Remove listener if both are closed
+    if ((changes['showMenu'] && !this.showMenu) && (changes['showDialog'] && !this.showDialog)) {
+      this.removeDocumentClickListener();
+    }
+  }
+
+  ngOnDestroy() {
+    this.removeDocumentClickListener();
+  }
+
+  addDocumentClickListener() {
+    if (this.documentClickUnlisten) return;
+    this.documentClickUnlisten = (document.addEventListener('mousedown', this.onDocumentClick, true), () => {
+      document.removeEventListener('mousedown', this.onDocumentClick, true);
+    });
+  }
+
+  removeDocumentClickListener() {
+    if (this.documentClickUnlisten) {
+      this.documentClickUnlisten();
+      this.documentClickUnlisten = null;
+    }
+  }
+
+  onDocumentClick = (event: MouseEvent) => {
+    // Context menu
+    const menu = document.querySelector('.thymeleaf-context-menu');
+    if (this.showMenu && menu && !menu.contains(event.target as Node)) {
+      this.onMenuClose();
+      return;
+    }
+    // Attribute dialog
+    const dialog = document.querySelector('.thymeleaf-attr-dialog');
+    if (this.showDialog && dialog && !dialog.contains(event.target as Node)) {
+      this.onDialogCancel();
+      return;
     }
   }
 
@@ -296,5 +339,19 @@ export class ThymeleafAttributeMenuComponent implements OnChanges {
   removeAttribute(attr: string) {
     this.attributeChange.emit({ attr, value: null });
     this.onMenuClose();
+  }
+
+  onContextMenuBackdropClick(event: MouseEvent) {
+    // Only close if click is outside the menu (on the context menu's outer div)
+    if ((event.target as HTMLElement).classList.contains('thymeleaf-context-menu')) {
+      this.onMenuClose();
+    }
+  }
+
+  onAttrDialogBackdropClick(event: MouseEvent) {
+    // Only close if click is on the backdrop, not inside the dialog
+    if ((event.target as HTMLElement).classList.contains('thymeleaf-attr-dialog-backdrop')) {
+      this.onDialogCancel();
+    }
   }
 }

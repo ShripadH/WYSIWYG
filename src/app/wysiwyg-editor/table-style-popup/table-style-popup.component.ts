@@ -37,6 +37,10 @@ export class TableStylePopupComponent {
   showRowBottomBorderColorPicker = false;
   showCellBgColorPicker = false;
 
+  // --- New: Table width and alignment ---
+  tableWidth: string = '';
+  tableAlign: 'left' | 'center' | 'right' = 'left';
+
   // Table style handlers
   onBorderColorChange(value: string) { this.borderColor = value; }
   onBorderWidthChange(value: number) { this.borderWidth = value; }
@@ -45,6 +49,11 @@ export class TableStylePopupComponent {
   onCellBgColorChange(value: string) { this.cellBgColor = value; }
   onCellAlignChange(value: string) { this.cellAlign = value; }
   onCellVAlignChange(value: string) { this.cellVAlign = value; }
+
+  // --- New: Table width and alignment handlers ---
+  onTableWidthChange(value: string) { this.tableWidth = value; }
+  setTableWidthPreset(val: string) { this.tableWidth = val; }
+  setTableAlign(val: 'left' | 'center' | 'right') { this.tableAlign = val; }
 
   openTableBorderColorPicker() { this.showTableBorderColorPicker = true; }
   closeTableBorderColorPicker() { this.showTableBorderColorPicker = false; }
@@ -77,7 +86,13 @@ export class TableStylePopupComponent {
   apply() {
     let styles: any = {};
     if (this.styleType === 'table') {
-      styles = { borderColor: this.borderColor, borderWidth: this.borderWidth, borderStyle: this.borderStyle };
+      styles = {
+        borderColor: this.borderColor,
+        borderWidth: this.borderWidth,
+        borderStyle: this.borderStyle,
+        tableWidth: this.tableWidth,
+        tableAlign: this.tableAlign
+      };
     } else if (this.styleType === 'row') {
       styles = {
         topBorderColor: this.topBorderColor,

@@ -78,7 +78,7 @@
 
 <input type="file" #imageInput accept="image/*" class="hidden-input" (change)="onImageSelected($event)" />
 
-<div *ngIf="thymeleafRender.showThymeleafDialog" class="thymeleaf-dialog-backdrop">
+<div *ngIf="thymeleafRender.showThymeleafDialog" class="thymeleaf-dialog-backdrop" (mousedown)="onThymeleafDialogBackdropClick($event)">
   <div class="thymeleaf-dialog">
     <h4>Insert Thymeleaf Variable</h4>
     <label>Attribute:

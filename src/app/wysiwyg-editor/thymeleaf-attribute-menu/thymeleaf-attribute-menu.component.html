@@ -1,5 +1,5 @@
 <!-- Context Menu -->
-<div *ngIf="showMenu && menuPosition" class="thymeleaf-context-menu" [ngStyle]="{'top.px': menuPosition.y, 'left.px': menuPosition.x}">
+<div *ngIf="showMenu && menuPosition" class="thymeleaf-context-menu" [ngStyle]="{'top.px': menuPosition.y, 'left.px': menuPosition.x}" (mousedown)="onContextMenuBackdropClick($event)">
   <div class="menu-title">Add/Edit Thymeleaf Attribute</div>
   <div class="menu-list">
     <div *ngFor="let attr of supportedAttributes" class="menu-item" (click)="onMenuSelect(attr)">
@@ -17,7 +17,7 @@
 </div>
 
 <!-- Attribute Dialog -->
-<div *ngIf="showDialog" class="thymeleaf-attr-dialog-backdrop">
+<div *ngIf="showDialog" class="thymeleaf-attr-dialog-backdrop" (mousedown)="onAttrDialogBackdropClick($event)">
   <div class="thymeleaf-attr-dialog">
     <div class="dialog-title">Edit Thymeleaf Attribute</div>
     <div class="dialog-attr">Attribute: <b>{{ selectedAttribute }}</b></div>
