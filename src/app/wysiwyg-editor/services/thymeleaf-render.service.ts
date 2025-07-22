@@ -292,7 +292,9 @@ export class ThymeleafRenderService {
     });
     // Run change detection to update the view if needed
     ngZone.runOutsideAngular(() => {
-      setTimeout(() => cdr.detectChanges(), 0);
+      setTimeout(() => {
+        if (cdr && typeof cdr.detectChanges === 'function') { cdr.detectChanges(); }
+      }, 0);
     });
   }
 
@@ -380,7 +382,7 @@ export class ThymeleafRenderService {
     this.showThymeleafAttrDialog = true;
     this.showThymeleafMenu = false;
     console.log('[onThymeleafEachEditHandleClickForTable] showThymeleafAttrDialog:', this.showThymeleafAttrDialog);
-    cdr.detectChanges();
+    if (cdr && typeof cdr.detectChanges === 'function') { cdr.detectChanges(); }
     console.log('[onThymeleafEachEditHandleClickForTable] after detectChanges');
   }
 
