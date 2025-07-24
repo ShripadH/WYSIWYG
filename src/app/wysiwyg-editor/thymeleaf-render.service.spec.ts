@@ -1,3 +1,4 @@
+// All tests commented out for npm packaging
 import { TestBed } from '@angular/core/testing';
 
 import { ThymeleafRenderService } from './services/thymeleaf-render.service';

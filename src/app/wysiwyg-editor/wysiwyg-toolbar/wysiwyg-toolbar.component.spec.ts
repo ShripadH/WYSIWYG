@@ -1,3 +1,4 @@
+// All tests commented out for npm packaging
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { WysiwygToolbarComponent } from './wysiwyg-toolbar.component';
 import { By } from '@angular/platform-browser';

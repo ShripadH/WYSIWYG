@@ -2,6 +2,11 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { TableStylePopupComponent } from './table-style-popup.component';
 
+// Utility function to check if a value is a valid DOM element
+function isDomElement(el: any): el is Element {
+  return el instanceof Element;
+}
+
 describe('TableStylePopupComponent', () => {
   let component: TableStylePopupComponent;
   let fixture: ComponentFixture<TableStylePopupComponent>;
@@ -18,11 +23,13 @@ describe('TableStylePopupComponent', () => {
   });
 
   afterEach(() => {
-    document.querySelectorAll('div, table, span, img').forEach(el => {
-      if (el.parentNode === document.body) {
-        el.remove();
-      }
-    });
+    if (document.body) {
+      document.querySelectorAll('div, table, span, img').forEach(el => {
+        if (el.parentNode === document.body && isDomElement(el)) {
+          el.remove();
+        }
+      });
+    }
   });
 
   it('should create', () => {
