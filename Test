@@ -68,3 +68,50 @@ db.notifications.createIndex({
 });
 
 i ahve this mongo collection, i want to have one query that can give me total count and unread count from the collections, also suggent me the indexes that needs to be applied { "channels":[ {"type":"INAPP", "status":"success"} ], "recipients":[ {"recipientId":"sh12345","read":false} ], "inAppChannelPresent":true }, { "channels":[ {"type":"INAPP", "status":"success"} ], "recipients":[ {"recipientId":"sh12345","read":true} ], "inAppChannelPresent":true }
+
+
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.aggregation.*;
+import org.springframework.stereotype.Service;
+
+import java.util.Map;
+
+import static org.springframework.data.mongodb.core.aggregation.Aggregation.*;
+
+@Service
+public class NotificationService {
+
+    @Autowired
+    private MongoTemplate mongoTemplate;
+
+    public Map<String, Object> getCounts(String recipientId) {
+        // Stage 1: Match
+        MatchOperation match = match(Criteria.where("inAppChannelPresent").is(true)
+                .and("channels.type").is("INAPP")
+                .and("channels.status").is("success")
+                .and("recipients.recipientId").is(recipientId));
+
+        // Stage 2: Unwind recipients array
+        UnwindOperation unwind = unwind("recipients");
+
+        // Stage 3: Group with total and unread counts
+        GroupOperation group = group()
+                .count().as("totalCount")
+                .sum(ConditionalOperators.when(Criteria.where("recipients.read").is(false))
+                        .then(1).otherwise(0))
+                .as("unreadCount");
+
+        // Build pipeline
+        Aggregation aggregation = newAggregation(match, unwind, group);
+
+        // Run aggregation
+        AggregationResults<Map> results =
+                mongoTemplate.aggregate(aggregation, "notifications", Map.class);
+
+        return results.getUniqueMappedResult();
+    }
+}
+
+
