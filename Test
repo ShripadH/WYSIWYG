@@ -1,0 +1,57 @@
+[
+  {
+    "$match": {
+      "inAppChannelPresent": true,
+      "channels.type": "INAPP",
+      "channels.status": "success",
+      "recipients.recipientId": "sh12345"
+    }
+  },
+  {
+    "$group": {
+      "_id": null,
+      "totalCount": { "$sum": 1 },
+      "unreadCount": {
+        "$sum": {
+          "$cond": [
+            { "$eq": [ "$recipients.read", false ] },
+            1,
+            0
+          ]
+        }
+      }
+    }
+  }
+]
+
+
+
+
+
+
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.aggregation.*;
+import static org.springframework.data.mongodb.core.aggregation.Aggregation.*;
+
+@Autowired
+private MongoTemplate mongoTemplate;
+
+public Map<String, Object> getCounts(String recipientId) {
+    MatchOperation match = match(Criteria.where("inAppChannelPresent").is(true)
+            .and("channels.type").is("INAPP")
+            .and("channels.status").is("success")
+            .and("recipients.recipientId").is(recipientId));
+
+    GroupOperation group = group()
+            .count().as("totalCount")
+            .sum(ConditionalOperators.when(Criteria.where("recipients.read").is(false))
+                    .then(1).otherwise(0))
+            .as("unreadCount");
+
+    Aggregation aggregation = newAggregation(match, group);
+
+    AggregationResults<Map> results =
+            mongoTemplate.aggregate(aggregation, "notifications", Map.class);
+
+    return results.getUniqueMappedResult();
+}
