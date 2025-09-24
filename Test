@@ -55,3 +55,15 @@ public Map<String, Object> getCounts(String recipientId) {
 
     return results.getUniqueMappedResult();
 }
+
+
+
+
+db.notifications.createIndex({
+  "recipients.recipientId": 1,
+  "recipients.read": 1,
+  "channels.type": 1,
+  "channels.status": 1,
+  "inAppChannelPresent": 1
+});
+
