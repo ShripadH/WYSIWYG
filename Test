@@ -67,3 +67,4 @@ db.notifications.createIndex({
   "inAppChannelPresent": 1
 });
 
+i ahve this mongo collection, i want to have one query that can give me total count and unread count from the collections, also suggent me the indexes that needs to be applied { "channels":[ {"type":"INAPP", "status":"success"} ], "recipients":[ {"recipientId":"sh12345","read":false} ], "inAppChannelPresent":true }, { "channels":[ {"type":"INAPP", "status":"success"} ], "recipients":[ {"recipientId":"sh12345","read":true} ], "inAppChannelPresent":true }
